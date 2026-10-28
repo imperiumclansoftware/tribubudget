@@ -1,0 +1,104 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-bottom: 0.35rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  .piggy {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--primary-bg);
+    color: var(--primary);
+  }
+  .hero-label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .amount-large {
+    font-size: clamp(2rem, 9vw, 2.75rem);
+  }
+}
+
+.section-title {
+  margin-bottom: 12px;
+}
+
+.infos {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.kind {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+
+  &.in {
+    background: var(--success-bg);
+    color: var(--success-text);
+  }
+}
+
+.block {
+  display: block;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.summary-column {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+/* Desktop: the balance stays in view beside the history */
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 32px;
+    align-items: start;
+  }
+  .summary-column {
+    position: sticky;
+    top: calc(var(--app-bar-height) + 24px);
+  }
+}

@@ -1,0 +1,54 @@
+:host {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 1.5rem 1rem;
+}
+
+.auth-card {
+  width: min(26rem, 100%);
+  display: grid;
+  gap: 1.25rem;
+}
+
+.brand {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  text-align: center;
+
+  .logo {
+    display: grid;
+    place-items: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: var(--primary-bg);
+    color: var(--primary);
+  }
+  p {
+    color: var(--text-secondary);
+  }
+}
+
+.switch {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.password {
+  position: relative;
+
+  input {
+    padding-right: 3rem;
+  }
+  button {
+    position: absolute;
+    right: 0.25rem;
+    top: 50%;
+    translate: 0 -50%;
+    min-height: 2rem;
+    padding: 0 0.6rem;
+    font-size: 0.8rem;
+  }
+}

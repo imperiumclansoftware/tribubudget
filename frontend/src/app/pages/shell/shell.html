@@ -1,0 +1,73 @@
+<div class="app-container">
+  <a class="skip" href="#contenu">Aller au contenu</a>
+
+  <header class="app-bar">
+    <span class="logo" aria-hidden="true"><app-icon name="piggy" [size]="22" /></span>
+    <div class="grow">
+      <strong class="brand">TribuBudget</strong>
+      <span class="family ellipsis">{{ auth.user()?.family?.name }}</span>
+      <span class="greeting ellipsis">Bonjour {{ auth.user()?.displayName }}</span>
+    </div>
+    @if (auth.isParent()) {
+      <a
+        class="btn btn-icon accounts"
+        routerLink="/comptes"
+        routerLinkActive="current"
+        aria-label="Comptes et catégories"
+        title="Comptes et catégories"
+      >
+        <app-icon name="wallet" />
+      </a>
+      <a
+        class="avatar"
+        routerLink="/mon-compte"
+        routerLinkActive="current"
+        [attr.aria-label]="'Mon compte (' + auth.user()?.displayName + ')'"
+        [title]="'Mon compte (' + auth.user()?.displayName + ')'"
+      >
+        {{ auth.user()?.displayName?.charAt(0) }}
+      </a>
+    }
+    <!-- Always in reach, for the children too (a shared tablet, a friend's phone…) -->
+    <button
+      type="button"
+      class="btn btn-icon logout"
+      (click)="auth.logout()"
+      aria-label="Se déconnecter"
+      title="Se déconnecter"
+    >
+      <app-icon name="logout" />
+      <span class="logout-label">Se déconnecter</span>
+    </button>
+  </header>
+
+  <main id="contenu" class="content" tabindex="-1">
+    <router-outlet />
+  </main>
+
+  <nav class="mobile-nav" aria-label="Navigation principale">
+    <div class="nav-brand">
+      <span class="logo" aria-hidden="true"><app-icon name="piggy" [size]="24" /></span>
+      <div class="grow">
+        <strong class="brand">TribuBudget</strong>
+        <span class="family ellipsis">{{ auth.user()?.family?.name }}</span>
+      </div>
+    </div>
+    @for (item of nav(); track item.path) {
+      <a
+        [class.desktop-only]="item.desktopOnly"
+        class="nav-item"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+      >
+        <app-icon [name]="item.icon" [size]="22" />
+        <span class="label">{{ item.label }}</span>
+        <span class="short" aria-hidden="true">{{ item.short ?? item.label }}</span>
+        @if (item.badge) {
+          <span class="count" [attr.aria-label]="item.badge + ' en attente'">{{ item.badge }}</span>
+        }
+      </a>
+    }
+  </nav>
+</div>

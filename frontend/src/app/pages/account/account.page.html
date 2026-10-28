@@ -1,0 +1,63 @@
+<div class="page narrow">
+  <header class="page-header">
+    <div>
+      <h1>{{ auth.isChild() ? 'Mon code' : 'Mon compte' }}</h1>
+      <p class="subtitle">
+        {{ auth.user()?.displayName }} · identifiant {{ auth.user()?.username }}
+      </p>
+    </div>
+    <button type="button" class="btn" (click)="auth.logout()">
+      <app-icon name="logout" /> Se déconnecter
+    </button>
+  </header>
+
+  <section class="card">
+    <h2>{{ auth.isChild() ? 'Changer mon code' : 'Changer mon mot de passe' }}</h2>
+    <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+      @if (auth.isChild()) {
+        <label class="field">
+          <span>Mon code actuel</span>
+          <input
+            formControlName="currentPassword"
+            type="password"
+            inputmode="numeric"
+            autocomplete="current-password"
+          />
+        </label>
+        <label class="field">
+          <span>Mon nouveau code</span>
+          <input
+            formControlName="newPassword"
+            type="password"
+            inputmode="numeric"
+            autocomplete="new-password"
+          />
+          <small class="hint">4 chiffres ou plus. Garde-le secret !</small>
+        </label>
+      } @else {
+        <label class="field">
+          <span>Mot de passe actuel</span>
+          <input
+            formControlName="currentPassword"
+            type="password"
+            autocomplete="current-password"
+          />
+        </label>
+        <label class="field">
+          <span>Nouveau mot de passe</span>
+          <input formControlName="newPassword" type="password" autocomplete="new-password" />
+          <small class="hint">8 caractères au moins.</small>
+        </label>
+      }
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+      @if (done()) {
+        <p class="notice" role="status">C’est changé !</p>
+      }
+      <div class="actions">
+        <button type="submit" class="btn btn-primary" [disabled]="pending()">Enregistrer</button>
+      </div>
+    </form>
+  </section>
+</div>

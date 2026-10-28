@@ -1,0 +1,43 @@
+# On a version tag (v0.1.0): checks the code (CI), then publishes the GitHub release with the notes of
+# that version from CHANGELOG.md. The Docker image is pushed to Docker Hub as iemperor/tribubudget.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # The section "## <version> …" of CHANGELOG.md, up to the next version
+          awk -v v="$version" '
+            /^## / { if (found) exit; if ($2 == v) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "CHANGELOG.md n'a pas de section pour la version $version." >&2
+            exit 1
+          fi
+          {
+            echo
+            echo "**Image Docker** : \`docker pull iemperor/tribubudget:$version\` ([installation](https://hub.docker.com/r/iemperor/tribubudget))"
+          } >> notes.md
+          cat notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: TribuBudget ${{ github.ref_name }}
+          body_path: notes.md

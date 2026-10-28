@@ -1,0 +1,43 @@
+<main class="auth-card card">
+  <div class="brand">
+    <span class="logo"><app-icon name="piggy" [size]="34" /></span>
+    <h1>TribuBudget</h1>
+    <p>Le budget de toute la famille</p>
+  </div>
+
+  <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+    <label class="field">
+      <span>Identifiant</span>
+      <input formControlName="username" autocomplete="username" autocapitalize="none" />
+    </label>
+    <label class="field">
+      <span>Mot de passe ou code</span>
+      <div class="password">
+        <input
+          formControlName="password"
+          [type]="showPassword() ? 'text' : 'password'"
+          autocomplete="current-password"
+        />
+        <button
+          type="button"
+          class="btn btn-ghost"
+          (click)="showPassword.set(!showPassword())"
+          [attr.aria-pressed]="showPassword()"
+        >
+          {{ showPassword() ? 'Masquer' : 'Afficher' }}
+        </button>
+      </div>
+    </label>
+
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+
+    <button type="submit" class="btn btn-primary" [disabled]="pending()">
+      {{ pending() ? 'Connexion…' : 'Se connecter' }}
+    </button>
+  </form>
+
+  <p class="switch">Nouveau ? <a routerLink="/inscription">Créer l’espace de ma famille</a></p>
+  <p class="muted switch">Enfants : demandez votre identifiant et votre code à vos parents.</p>
+</main>

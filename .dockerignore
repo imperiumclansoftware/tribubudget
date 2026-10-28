@@ -1,0 +1,21 @@
+# Only the sources: dependencies are installed and builds made inside the image
+**/.git
+**/.idea
+**/.vscode
+**/node_modules
+**/.angular
+frontend/dist
+backend/vendor
+backend/var
+backend/.phpunit.cache
+backend/.php-cs-fixer.cache
+backend/tests
+backend/phpunit.dist.xml
+backend/compose*.yaml
+# Secrets and keys of a local installation never go into the image
+**/.env.local
+**/.env.*.local
+backend/.env.test
+backend/config/jwt/*.pem
+docker/.env
+.github

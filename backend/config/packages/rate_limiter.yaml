@@ -1,0 +1,13 @@
+framework:
+    rate_limiter:
+        # Families created from one IP address
+        registration:
+            policy: sliding_window
+            limit: 5
+            interval: '1 hour'
+
+when@test:
+    framework:
+        rate_limiter:
+            registration:
+                policy: no_limit

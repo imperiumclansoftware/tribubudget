@@ -1,0 +1,100 @@
+.available {
+  color: var(--text-primary);
+}
+
+.projects {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  > li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 0;
+    border-top: 1px solid var(--border-color);
+  }
+  > li:first-child {
+    border-top: 0;
+  }
+}
+
+.rank {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  font-weight: 900;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.track {
+  height: 0.6rem;
+  margin: 0.45rem 0;
+  border-radius: 999px;
+  background: var(--meter-track);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--meter-fill);
+
+  &.full {
+    background: var(--success-text);
+  }
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2rem;
+}
+
+.tools {
+  display: flex;
+  flex: none;
+}
+
+.more {
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 40rem) {
+  .projects > li {
+    flex-wrap: wrap;
+  }
+  .tools {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+.accounts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .accounts:has(> :nth-child(2)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    align-items: start;
+  }
+}

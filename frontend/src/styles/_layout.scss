@@ -1,0 +1,174 @@
+// Layout pieces of the theme (themecss/gemini-code-1793191508593.css): adaptive container,
+// balance card, transaction list, fixed bottom navigation.
+
+/* --- Conteneur Adaptatif (Mobile First) --- */
+.app-container {
+  max-width: 480px; /* Format idéal pour simuler une app mobile sur desktop */
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--bg-main);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .app-container {
+    max-width: 768px;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+  }
+}
+
+/* --- Cartes de Solde (Dashboard) --- */
+.card-balance {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+}
+
+.amount-large {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+/* TribuBudget: the text variants, readable on the surface */
+.amount-large.positive {
+  color: var(--success-text);
+}
+.amount-large.negative {
+  color: var(--danger-text);
+}
+
+/* --- Liste des Transactions (Ergonomie tactile) --- */
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transaction-item {
+  background: var(--bg-surface);
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border-color);
+  min-height: var(--touch-target);
+  min-width: 0;
+}
+
+/* --- Barre de Navigation Mobile Flottante --- */
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 0;
+  /* TribuBudget: above the iPhone home indicator */
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  box-shadow: var(--shadow-floating);
+  z-index: 1000;
+}
+
+.nav-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.75rem;
+  gap: 4px;
+  min-width: 60px;
+  min-height: var(--touch-target); /* Accessible au doigt */
+  justify-content: center;
+}
+
+.nav-item.active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* TribuBudget: on tablets, the bar lines up with the container instead of the whole screen */
+@media (min-width: 768px) {
+  .mobile-nav {
+    max-width: 768px;
+    margin: 0 auto;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+  }
+}
+
+/* --- TribuBudget: desktop (1024px and wider) ---
+   The bottom bar becomes a side navigation, the container takes the whole screen. */
+@media (min-width: 1024px) {
+  .app-container {
+    max-width: none;
+    border: 0;
+    display: grid;
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'nav bar'
+      'nav main';
+  }
+
+  .mobile-nav {
+    grid-area: nav;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100dvh;
+    max-width: none;
+    margin: 0;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 4px;
+    padding: 20px 12px;
+    border: 0;
+    border-right: 1px solid var(--border-color);
+    box-shadow: none;
+    overflow-y: auto;
+  }
+
+  .nav-item {
+    flex: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 0 12px;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-weight: 500;
+
+    &:hover {
+      background: var(--bg-subtle);
+    }
+  }
+
+  .nav-item.active {
+    background: var(--primary-bg);
+  }
+}
+
+/* Wide screens: roomier pages */
+@media (min-width: 1440px) {
+  :root {
+    --sidebar-width: 280px;
+    --content-max: 1360px;
+  }
+}

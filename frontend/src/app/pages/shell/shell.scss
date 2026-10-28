@@ -1,0 +1,248 @@
+.skip {
+  position: absolute;
+  left: -999px;
+
+  &:focus {
+    left: 16px;
+    top: 8px;
+    z-index: 1001;
+    padding: 12px 16px;
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+  }
+}
+
+/* Top bar */
+
+.app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--app-bar-height);
+  padding: 4px 8px 4px 16px;
+  padding-top: calc(4px + env(safe-area-inset-top));
+  background: color-mix(in srgb, var(--bg-main) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-color);
+
+  .current {
+    color: var(--primary);
+  }
+  .greeting {
+    display: none;
+  }
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+.brand {
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.family {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Desktop only: the head of the side navigation, the accounts entry */
+.nav-brand,
+.desktop-only {
+  display: none;
+}
+
+/* Touch target of 48px around a 36px disc */
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  color: var(--text-primary);
+  font-weight: 800;
+  text-decoration: none;
+  text-transform: uppercase;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-subtle);
+    z-index: -1;
+  }
+  position: relative;
+  isolation: isolate;
+
+  &.current::before {
+    background: var(--primary-bg);
+  }
+}
+
+/* Page, clear of the bottom bar */
+
+.content {
+  flex: 1;
+  padding: 16px 16px calc(var(--nav-height) + 24px + env(safe-area-inset-bottom));
+  min-width: 0;
+  outline: none;
+}
+
+/* Bottom navigation (.mobile-nav, .nav-item: themecss) */
+
+.nav-item {
+  flex: 1;
+  min-width: 0;
+  padding: 0 2px;
+
+  .label {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .short {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .count {
+    position: absolute;
+    top: 0;
+    left: calc(50% + 6px);
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--danger);
+    color: var(--text-inverse);
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+  }
+}
+
+/* The active tab gets a pill behind its icon */
+.nav-item app-icon {
+  padding: 2px 14px;
+  border-radius: 999px;
+}
+.nav-item.active app-icon {
+  background: var(--primary-bg);
+}
+
+/* Tablets: full labels, roomier page */
+@media (min-width: 600px) {
+  .nav-item {
+    .label {
+      position: static !important;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip-path: none;
+    }
+    .short {
+      display: none;
+    }
+  }
+}
+
+@media (min-width: 768px) {
+  .app-bar {
+    padding-left: 24px;
+    padding-right: 16px;
+  }
+  .content {
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 24px;
+  }
+}
+
+/* Desktop: side navigation (see .mobile-nav in styles/_layout.scss) */
+@media (min-width: 1024px) {
+  .app-bar {
+    grid-area: bar;
+    padding: 8px 24px 8px 40px;
+
+    .logo,
+    .brand,
+    .family,
+    .accounts {
+      display: none;
+    }
+    .greeting {
+      display: block;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+  }
+
+  .content {
+    grid-area: main;
+    padding: 32px 40px 48px;
+  }
+
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 12px 20px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .desktop-only {
+    display: flex;
+  }
+
+  /* One line per entry, from the top (the phones' bar shares the width out with flex: 1) */
+  .nav-item {
+    flex: none;
+    padding: 0 12px;
+
+    app-icon {
+      padding: 0;
+      background: none !important;
+    }
+    .count {
+      position: static;
+      margin-left: auto;
+    }
+  }
+}
+
+/* The label shows on desktops, where there is room; phones keep the icon */
+.logout-label {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .app-bar .logout {
+    width: auto;
+    padding: 0 14px;
+    gap: 8px;
+  }
+  .logout-label {
+    display: inline;
+    font-size: 0.9rem;
+  }
+}

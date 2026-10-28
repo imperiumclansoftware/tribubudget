@@ -1,0 +1,203 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>Opérations</h1>
+      <p class="subtitle">Loyer, abonnements, salaires : enregistrés tout seuls à leur date</p>
+    </div>
+    <button
+      type="button"
+      class="btn btn-primary"
+      (click)="openNew()"
+      [disabled]="!accounts.value()?.length"
+    >
+      <app-icon name="plus" /> Nouvelle récurrente
+    </button>
+  </header>
+
+  <div class="filters">
+    <app-operation-tabs />
+  </div>
+
+  @if (current().length) {
+    <div class="summary">
+      <span>
+        Par mois : dépenses
+        <strong class="amount">{{ monthlyTotals().expenses | euros }}</strong>
+      </span>
+      <span>
+        revenus <strong class="amount amount-in">{{ monthlyTotals().income | euros }}</strong>
+      </span>
+    </div>
+  }
+
+  @if (loadError(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+
+  <section class="card">
+    <h2>En cours</h2>
+    <ul class="list">
+      @for (r of current(); track r.id) {
+        <li>
+          <span
+            class="dot"
+            [style.background]="category(r.categoryId)?.color ?? 'var(--border-color)'"
+            aria-hidden="true"
+          ></span>
+          <div class="grow">
+            <strong class="ellipsis">{{ r.label }}</strong>
+            <span class="muted ellipsis">
+              {{ frequencies[r.frequency] }} · prochaine le {{ formatLongDay(r.nextOn) }}
+              @if (r.endsOn) {
+                · jusqu’au {{ r.endsOn | day }}
+              }
+            </span>
+            <span class="muted ellipsis">
+              {{ category(r.categoryId)?.name ?? 'Sans catégorie' }} ·
+              {{ accountName(r.accountId) }}
+            </span>
+          </div>
+          <span class="amount" [class.amount-in]="r.amount > 0">{{ r.amount | euros: true }}</span>
+          <button
+            type="button"
+            class="btn btn-icon"
+            (click)="openEdit(r)"
+            [attr.aria-label]="'Modifier ' + r.label"
+          >
+            <app-icon name="edit" [size]="18" />
+          </button>
+        </li>
+      } @empty {
+        @if (recurring.value()) {
+          <li class="empty">
+            Aucune opération récurrente. Ajoutez le loyer, les abonnements ou le salaire : ils
+            seront enregistrés tout seuls à chaque échéance.
+          </li>
+        } @else {
+          <li class="empty">Chargement…</li>
+        }
+      }
+    </ul>
+  </section>
+
+  @if (stopped().length) {
+    <section class="card">
+      <h2>En pause ou terminées</h2>
+      <ul class="list">
+        @for (r of stopped(); track r.id) {
+          <li>
+            <span class="dot" [style.background]="'var(--border-color)'" aria-hidden="true"></span>
+            <div class="grow">
+              <strong class="ellipsis">{{ r.label }}</strong>
+              <span class="muted"
+                >{{ r.finished ? 'Terminée' : 'En pause' }} · {{ frequencies[r.frequency] }}</span
+              >
+            </div>
+            <span class="amount">{{ r.amount | euros: true }}</span>
+            <button
+              type="button"
+              class="btn btn-icon"
+              (click)="openEdit(r)"
+              [attr.aria-label]="'Modifier ' + r.label"
+            >
+              <app-icon name="edit" [size]="18" />
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</div>
+
+<app-modal
+  [heading]="
+    isEditing(editing()) ? 'Modifier l’opération récurrente' : 'Nouvelle opération récurrente'
+  "
+  [open]="editing() !== null"
+  (closed)="editing.set(null); formError.set(null)"
+>
+  <form class="form" [formGroup]="form" (ngSubmit)="save()">
+    <div class="segmented" role="radiogroup" aria-label="Type">
+      <label><input type="radio" formControlName="type" value="expense" />Dépense</label>
+      <label><input type="radio" formControlName="type" value="income" />Revenu</label>
+    </div>
+    <label class="field">
+      <span>Libellé</span>
+      <input formControlName="label" placeholder="Loyer, Netflix, assurance auto…" />
+    </label>
+    <div class="form-row">
+      <label class="field">
+        <span>Montant (€)</span>
+        <input formControlName="amount" inputmode="decimal" placeholder="0,00" />
+      </label>
+      <label class="field">
+        <span>Fréquence</span>
+        <select formControlName="frequency">
+          @for (option of frequencyOptions; track option[0]) {
+            <option [value]="option[0]">{{ option[1] }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <label class="field">
+      <span>Prochaine échéance</span>
+      <input formControlName="nextOn" type="date" />
+      @if (catchUpWarning()) {
+        <small class="hint"
+          >Date passée : les échéances depuis cette date seront enregistrées.</small
+        >
+      } @else {
+        <small class="hint"
+          >Les suivantes tombent le même jour (le dernier du mois s’il est plus court).</small
+        >
+      }
+    </label>
+    <label class="check">
+      <input type="checkbox" formControlName="hasEnd" /> S’arrête à une date (fin d’un crédit…)
+    </label>
+    @if (hasEnd()) {
+      <label class="field">
+        <span>Dernière échéance au plus tard le</span>
+        <input formControlName="endsOn" type="date" />
+      </label>
+    }
+    <div class="form-row">
+      <label class="field">
+        <span>Compte</span>
+        <select formControlName="accountId">
+          @for (a of accounts.value(); track a.id) {
+            <option [ngValue]="a.id">{{ a.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span>Catégorie</span>
+        <select formControlName="categoryId">
+          <option [ngValue]="0">Sans catégorie</option>
+          @for (c of formCategories(); track c.id) {
+            <option [ngValue]="c.id">{{ c.name }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <label class="check"> <input type="checkbox" formControlName="active" /> Active </label>
+
+    @if (formError(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+
+    <div class="actions">
+      @if (editing(); as r) {
+        @if (isEditing(r)) {
+          <button type="button" class="btn btn-danger btn-ghost" (click)="remove(r)">
+            <app-icon name="trash" [size]="18" /> Supprimer
+          </button>
+        }
+      }
+      <button type="button" class="btn" (click)="editing.set(null); formError.set(null)">
+        Annuler
+      </button>
+      <button type="submit" class="btn btn-primary" [disabled]="pending()">Enregistrer</button>
+    </div>
+  </form>
+</app-modal>

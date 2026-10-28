@@ -1,0 +1,29 @@
+.request {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.kind {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+
+.block {
+  display: block;
+}
+
+.reason {
+  color: var(--text-secondary);
+}
+
+.answer {
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}

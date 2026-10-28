@@ -1,0 +1,88 @@
+<div class="toolbar">
+  <ul class="legend" aria-label="Légende">
+    <li><span class="key income"></span>Revenus</li>
+    <li><span class="key expense"></span>Dépenses</li>
+  </ul>
+  <button
+    type="button"
+    class="btn btn-small btn-ghost"
+    (click)="showTable.set(!showTable())"
+    [attr.aria-pressed]="showTable()"
+  >
+    <app-icon [name]="showTable() ? 'chart' : 'table'" [size]="16" />
+    {{ showTable() ? 'Graphique' : 'Tableau' }}
+  </button>
+</div>
+
+@if (showTable()) {
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Mois</th>
+        <th scope="col">Revenus</th>
+        <th scope="col">Dépenses</th>
+        <th scope="col">Solde</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (m of months(); track m.month) {
+        <tr>
+          <th scope="row">{{ formatMonth(m.month) }}</th>
+          <td>{{ formatCents(m.income) }}</td>
+          <td>{{ formatCents(m.expenses) }}</td>
+          <td>{{ formatCents(m.income - m.expenses) }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+} @else {
+  <div class="plot" role="group" aria-label="Revenus et dépenses des derniers mois">
+    <div class="axis" aria-hidden="true">
+      @for (tick of ticks(); track tick.value) {
+        <div class="tick" [style.bottom]="height(tick.value)">
+          <span>{{ tick.label }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="columns">
+      @for (m of months(); track m.month; let i = $index) {
+        <div
+          class="month"
+          [class.active]="active() === i"
+          tabindex="0"
+          [attr.aria-label]="
+            formatMonth(m.month) +
+            ' : revenus ' +
+            formatCents(m.income) +
+            ', dépenses ' +
+            formatCents(m.expenses)
+          "
+          (pointerenter)="active.set(i)"
+          (pointerleave)="active.set(null)"
+          (focus)="active.set(i)"
+          (blur)="active.set(null)"
+        >
+          <div class="bars">
+            <span class="bar income" [style.height]="height(m.income)"></span>
+            <span class="bar expense" [style.height]="height(m.expenses)"></span>
+          </div>
+          <span class="label">{{ formatShortMonth(m.month) }}</span>
+
+          @if (active() === i) {
+            <div class="tooltip" [class.flip]="i >= months().length - 2" aria-hidden="true">
+              <strong class="title">{{ formatMonth(m.month) }}</strong>
+              <span class="row"
+                ><span class="line income"></span><b>{{ formatCents(m.income) }}</b> revenus</span
+              >
+              <span class="row"
+                ><span class="line expense"></span
+                ><b>{{ formatCents(m.expenses) }}</b> dépenses</span
+              >
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

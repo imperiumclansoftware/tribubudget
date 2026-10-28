@@ -1,0 +1,6 @@
+// Theme of TribuBudget: the semantic tokens and the layout of themecss/, then the building blocks
+// of the pages. Mobile first, light and dark following the system.
+@use 'styles/tokens';
+@use 'styles/base';
+@use 'styles/layout';
+@use 'styles/components';

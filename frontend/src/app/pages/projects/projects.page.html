@@ -1,0 +1,228 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>Projets</h1>
+      <p class="subtitle">
+        L’épargne au-dessus du plancher finance les projets, dans l’ordre de leur priorité
+      </p>
+    </div>
+  </header>
+
+  @if (loadError(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+  @if (error() && !editing() && !achieving()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  @if (data(); as d) {
+    <div class="accounts">
+      @for (account of d.accounts; track account.id) {
+        <section class="card" [class.loading]="pending()">
+          <div class="card-header">
+            <div>
+              <h2>{{ account.name }}</h2>
+              <p class="muted">
+                Solde {{ account.balance | euros }}
+                @if (account.minimumBalance) {
+                  · plancher {{ account.minimumBalance | euros }}
+                }
+                ·
+                <strong class="available">{{ account.available | euros }} pour les projets</strong>
+              </p>
+            </div>
+            <button type="button" class="btn btn-small" (click)="openNew(account)">
+              <app-icon name="plus" [size]="16" /> Projet
+            </button>
+          </div>
+
+          @if (account.minimumBalance && account.balance < account.minimumBalance) {
+            <p class="notice">
+              Le solde n’atteint pas encore le plancher : il manque
+              {{ account.minimumBalance - account.balance | euros }} avant de financer les projets.
+            </p>
+          }
+
+          <ol class="projects">
+            @for (p of account.projects; track p.id; let i = $index, last = $last) {
+              <li>
+                <span class="rank" [attr.aria-label]="'Priorité ' + p.priority">{{
+                  p.priority
+                }}</span>
+                <div class="grow">
+                  <div class="head">
+                    <strong class="ellipsis grow">{{ p.name }}</strong>
+                    <span class="amount">{{ p.allocated | euros }}</span>
+                    <span class="muted">/ {{ p.target | euros }}</span>
+                  </div>
+                  <div
+                    class="track"
+                    role="meter"
+                    [attr.aria-label]="p.name"
+                    aria-valuemin="0"
+                    [attr.aria-valuemax]="p.target / 100"
+                    [attr.aria-valuenow]="p.allocated / 100"
+                  >
+                    <span
+                      class="fill"
+                      [class.full]="p.fundable"
+                      [style.width.%]="percent(p)"
+                    ></span>
+                  </div>
+                  <div class="status">
+                    @if (p.fundable) {
+                      <span class="badge badge-positive">
+                        <app-icon name="check" [size]="14" /> Réalisable maintenant
+                      </span>
+                      <button
+                        type="button"
+                        class="btn btn-small btn-primary"
+                        (click)="openAchieve(p, account)"
+                      >
+                        C’est fait
+                      </button>
+                    } @else {
+                      <span class="muted">Il manque {{ p.target - p.allocated | euros }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="tools">
+                  <button
+                    type="button"
+                    class="btn btn-icon"
+                    [disabled]="i === 0 || pending()"
+                    (click)="move(account, i, -1)"
+                    [attr.aria-label]="'Monter la priorité de ' + p.name"
+                  >
+                    <app-icon name="up" [size]="18" />
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-icon"
+                    [disabled]="last || pending()"
+                    (click)="move(account, i, 1)"
+                    [attr.aria-label]="'Baisser la priorité de ' + p.name"
+                  >
+                    <app-icon name="down" [size]="18" />
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-icon"
+                    (click)="openEdit(p, account)"
+                    [attr.aria-label]="'Modifier ' + p.name"
+                  >
+                    <app-icon name="edit" [size]="18" />
+                  </button>
+                </div>
+              </li>
+            } @empty {
+              <li class="empty">Aucun projet sur ce compte.</li>
+            }
+          </ol>
+
+          @if (account.projects.length && account.unallocated > 0) {
+            <p class="muted more">Reste {{ account.unallocated | euros }} non affecté.</p>
+          }
+        </section>
+      } @empty {
+        <section class="card empty">
+          <p>Les projets se rattachent à un compte d’épargne.</p>
+          <p><a routerLink="/comptes">Créer un compte d’épargne</a></p>
+        </section>
+      }
+    </div>
+
+    @if (d.achieved.length) {
+      <section class="card">
+        <h2>Réalisés</h2>
+        <ul class="list">
+          @for (a of d.achieved; track a.id) {
+            <li>
+              <app-icon name="check" />
+              <span class="grow ellipsis">{{ a.name }}</span>
+              <span class="muted">{{ a.accountName }}</span>
+              <span class="amount">{{ a.target | euros }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  } @else if (!loadError()) {
+    <p class="empty">Chargement…</p>
+  }
+</div>
+
+<app-modal
+  [heading]="editing()?.project ? 'Modifier le projet' : 'Nouveau projet'"
+  [open]="editing() !== null"
+  (closed)="close()"
+>
+  <form class="form" [formGroup]="form" (ngSubmit)="save()">
+    <label class="field">
+      <span>Projet</span>
+      <input formControlName="name" placeholder="Vacances d’été, vélo de Léa…" />
+    </label>
+    <div class="form-row">
+      <label class="field">
+        <span>Montant visé (€)</span>
+        <input formControlName="target" inputmode="decimal" />
+      </label>
+      <label class="field">
+        <span>Compte d’épargne</span>
+        <select formControlName="accountId">
+          @for (a of data()?.accounts; track a.id) {
+            <option [ngValue]="a.id">{{ a.name }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    @if (!editing()?.project) {
+      <small class="hint muted">Il passe en dernier : montez sa priorité ensuite si besoin.</small>
+    }
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+    <div class="actions">
+      @if (editing()?.project; as project) {
+        <button type="button" class="btn btn-ghost btn-danger" (click)="remove(project)">
+          Supprimer
+        </button>
+      }
+      <button type="button" class="btn" (click)="close()">Annuler</button>
+      <button type="submit" class="btn btn-primary" [disabled]="pending()">Enregistrer</button>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal heading="Projet réalisé" [open]="achieving() !== null" (closed)="close()">
+  @if (achieving(); as a) {
+    <form class="form" [formGroup]="achieveForm" (ngSubmit)="achieve()">
+      <p>
+        <strong>{{ a.project.name }}</strong> ({{ a.project.target | euros }}) ne recevra plus
+        d’argent : le reste de « {{ a.account.name }} » va aux projets suivants.
+      </p>
+      <label class="check">
+        <input type="checkbox" formControlName="recordWithdrawal" />
+        Enregistrer le retrait de {{ a.project.target | euros }} sur « {{ a.account.name }} »
+      </label>
+      @if (achieveForm.controls.recordWithdrawal.value) {
+        <label class="field">
+          <span>Catégorie de la dépense</span>
+          <select formControlName="categoryId">
+            <option [ngValue]="0">Sans catégorie</option>
+            @for (c of expenseCategories(); track c.id) {
+              <option [ngValue]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+      }
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+      <div class="actions">
+        <button type="button" class="btn" (click)="close()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="pending()">Valider</button>
+      </div>
+    </form>
+  }
+</app-modal>

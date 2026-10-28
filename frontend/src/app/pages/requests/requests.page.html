@@ -1,0 +1,190 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>{{ auth.isChild() ? 'Mes demandes' : 'Demandes des enfants' }}</h1>
+      <p class="subtitle">
+        {{
+          auth.isChild()
+            ? 'Demande une avance ou un achat à tes parents'
+            : 'Avances sur l’argent de poche et envies d’achats'
+        }}
+      </p>
+    </div>
+    @if (auth.isChild()) {
+      <button type="button" class="btn btn-primary" (click)="openAsk()">
+        <app-icon name="plus" /> Nouvelle demande
+      </button>
+    }
+  </header>
+
+  @if (loadError(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+  @if (error() && !asking() && !answering()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  <section class="card">
+    <h2>En attente</h2>
+    <ul class="list">
+      @for (r of pending(); track r.id) {
+        <li class="request">
+          <span class="kind" aria-hidden="true"
+            ><app-icon [name]="r.kind === 'advance' ? 'inbox' : 'cart'"
+          /></span>
+          <div class="grow">
+            <strong class="block">
+              @if (auth.isParent()) {
+                {{ r.child.displayName }} ·
+              }
+              {{ kindLabels[r.kind] }} de {{ r.amount | euros }}
+            </strong>
+            <span class="reason">« {{ r.reason }} »</span>
+          </div>
+          <div class="actions">
+            @if (auth.isParent()) {
+              <button type="button" class="btn btn-small" (click)="openAnswer(r, false)">
+                Refuser
+              </button>
+              <button type="button" class="btn btn-small btn-primary" (click)="openAnswer(r, true)">
+                Accepter
+              </button>
+            } @else {
+              <button type="button" class="btn btn-small" (click)="cancel(r)" [disabled]="busy()">
+                Retirer
+              </button>
+            }
+          </div>
+        </li>
+      } @empty {
+        <li class="empty">Aucune demande en attente.</li>
+      }
+    </ul>
+  </section>
+
+  @if (answered().length) {
+    <section class="card">
+      <h2>Déjà répondues</h2>
+      <ul class="list">
+        @for (r of answered(); track r.id) {
+          <li class="request">
+            <span class="kind" aria-hidden="true"
+              ><app-icon [name]="r.kind === 'advance' ? 'inbox' : 'cart'"
+            /></span>
+            <div class="grow">
+              <strong class="block">
+                @if (auth.isParent()) {
+                  {{ r.child.displayName }} ·
+                }
+                {{ kindLabels[r.kind] }} de {{ r.amount | euros }}
+              </strong>
+              <span class="reason">« {{ r.reason }} »</span>
+              @if (r.answer) {
+                <span class="answer block"
+                  ><strong>{{ r.decidedBy }} :</strong> {{ r.answer }}</span
+                >
+              }
+            </div>
+            <span
+              class="badge"
+              [class.badge-positive]="r.status === 'approved'"
+              [class.badge-negative]="r.status === 'rejected'"
+            >
+              <app-icon [name]="r.status === 'approved' ? 'check' : 'x'" [size]="14" />
+              {{ statusLabels[r.status] }}
+            </span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</div>
+
+<app-modal
+  heading="Nouvelle demande"
+  [open]="asking()"
+  (closed)="asking.set(false); error.set(null)"
+>
+  <form class="form" [formGroup]="askForm" (ngSubmit)="ask()">
+    <div class="segmented" role="radiogroup" aria-label="Type de demande">
+      <label><input type="radio" formControlName="kind" value="advance" />Une avance</label>
+      <label><input type="radio" formControlName="kind" value="purchase" />Un achat</label>
+    </div>
+    <p class="muted">
+      @if (askForm.controls.kind.value === 'advance') {
+        L’argent arrive dans ta tirelire tout de suite, et il est repris sur tes prochains
+        versements.
+      } @else {
+        Tes parents achètent la chose s’ils sont d’accord.
+      }
+    </p>
+    <label class="field">
+      <span>Combien ? (€)</span>
+      <input formControlName="amount" inputmode="decimal" />
+    </label>
+    <label class="field">
+      <span>Pourquoi ?</span>
+      <textarea
+        formControlName="reason"
+        rows="3"
+        maxlength="200"
+        placeholder="Explique ta demande"
+      ></textarea>
+    </label>
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="btn" (click)="asking.set(false); error.set(null)">
+        Annuler
+      </button>
+      <button type="submit" class="btn btn-primary" [disabled]="busy()">Envoyer</button>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal
+  [heading]="answering()?.approve ? 'Accepter la demande' : 'Refuser la demande'"
+  [open]="answering() !== null"
+  (closed)="answering.set(null); error.set(null)"
+>
+  @if (answering(); as a) {
+    <form class="form" [formGroup]="answerForm" (ngSubmit)="answer()">
+      <p>
+        {{ a.request.child.displayName }} demande
+        {{ a.request.kind === 'advance' ? 'une avance' : 'un achat' }} de
+        <strong>{{ a.request.amount | euros }}</strong> : « {{ a.request.reason }} »
+      </p>
+      @if (a.approve && a.request.kind === 'advance') {
+        <label class="field">
+          <span>Pris sur le compte</span>
+          <select formControlName="accountId">
+            <option [ngValue]="0">Aucun (ne pas l’enregistrer dans le budget)</option>
+            @for (account of accounts.value(); track account.id) {
+              <option [ngValue]="account.id">{{ account.name }}</option>
+            }
+          </select>
+          <small class="hint"
+            >L’avance est créditée tout de suite et reprise sur les prochains versements d’argent de
+            poche.</small
+          >
+        </label>
+      }
+      <label class="field">
+        <span>Un mot pour {{ a.request.child.displayName }} (facultatif)</span>
+        <textarea formControlName="answer" rows="2" maxlength="200"></textarea>
+      </label>
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+      <div class="actions">
+        <button type="button" class="btn" (click)="answering.set(null); error.set(null)">
+          Annuler
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="busy()">
+          {{ a.approve ? 'Accepter' : 'Refuser' }}
+        </button>
+      </div>
+    </form>
+  }
+</app-modal>

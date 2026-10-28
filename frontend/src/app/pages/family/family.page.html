@@ -1,0 +1,175 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>{{ auth.user()?.family?.name }}</h1>
+      <p class="subtitle">Les membres de la famille et leurs accès</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="openAdd()">
+      <app-icon name="plus" /> Ajouter un membre
+    </button>
+  </header>
+
+  @if (bienvenue()) {
+    <div class="notice welcome">
+      <strong>Bienvenue !</strong> Votre famille est créée, avec un compte courant et des catégories
+      prêtes à l’emploi. Ajoutez maintenant l’autre parent et les enfants : chaque enfant se
+      connecte avec son identifiant et un code à 4 chiffres.
+    </div>
+  }
+
+  @if (error() && !adding() && !editing()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  <section>
+    <h2 class="section-title">Enfants</h2>
+    <div class="children">
+      @for (child of children.value(); track child.id) {
+        <article class="card child">
+          <div class="child-head">
+            <span class="avatar" aria-hidden="true">{{ child.displayName.charAt(0) }}</span>
+            <div class="grow">
+              <h3 class="ellipsis">{{ child.displayName }}</h3>
+              <span class="muted">{{ child.username }}</span>
+            </div>
+            <button
+              type="button"
+              class="btn btn-icon"
+              (click)="openEdit(child)"
+              [attr.aria-label]="'Modifier ' + child.displayName"
+            >
+              <app-icon name="edit" [size]="18" />
+            </button>
+          </div>
+          <p class="balance">{{ child.balance | euros }}</p>
+          <p class="muted">
+            @if (child.allowance?.active) {
+              {{ child.allowance!.amount | euros }} {{ frequencies[child.allowance!.frequency] }}
+            } @else {
+              Pas d’argent de poche automatique
+            }
+          </p>
+          @if (child.advanceOwed > 0) {
+            <span class="badge badge-warning"
+              >Avance à rembourser : {{ child.advanceOwed | euros }}</span
+            >
+          }
+          <a class="btn btn-small" [routerLink]="['/famille', child.id]">
+            <app-icon name="piggy" [size]="16" /> Voir la tirelire
+          </a>
+        </article>
+      } @empty {
+        <p class="card empty">Aucun enfant pour l’instant.</p>
+      }
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Parents</h2>
+    <ul class="list">
+      @for (parent of parents(); track parent.id) {
+        <li>
+          <span class="avatar small" aria-hidden="true">{{ parent.displayName.charAt(0) }}</span>
+          <div class="grow">
+            <strong>{{ parent.displayName }}</strong>
+            @if (parent.id === auth.user()?.id) {
+              <span class="badge">vous</span>
+            }
+            <span class="muted block">{{ parent.username }}</span>
+          </div>
+          @if (parent.id !== auth.user()?.id) {
+            <button
+              type="button"
+              class="btn btn-icon"
+              (click)="openEdit(parent)"
+              [attr.aria-label]="'Modifier ' + parent.displayName"
+            >
+              <app-icon name="edit" [size]="18" />
+            </button>
+          }
+        </li>
+      }
+    </ul>
+    <p class="muted rights">
+      Les parents voient et gèrent tout. Les enfants ne voient que leur tirelire : ils notent leurs
+      dépenses et font des demandes (avance, achat) que vous acceptez ou refusez.
+    </p>
+  </section>
+</div>
+
+<app-modal
+  heading="Ajouter un membre"
+  [open]="adding()"
+  (closed)="adding.set(false); error.set(null)"
+>
+  <form class="form" [formGroup]="addForm" (ngSubmit)="add()">
+    <div class="segmented" role="radiogroup" aria-label="Rôle">
+      <label><input type="radio" formControlName="role" value="child" />Enfant</label>
+      <label><input type="radio" formControlName="role" value="parent" />Parent</label>
+    </div>
+    <label class="field">
+      <span>Prénom</span>
+      <input formControlName="displayName" />
+    </label>
+    <label class="field">
+      <span>Identifiant de connexion</span>
+      <input formControlName="username" autocapitalize="none" autocomplete="off" />
+    </label>
+    <label class="field">
+      @if (addRole() === 'child') {
+        <span>Code (4 chiffres ou plus)</span>
+        <input formControlName="password" inputmode="numeric" autocomplete="off" />
+      } @else {
+        <span>Mot de passe (8 caractères ou plus)</span>
+        <input formControlName="password" type="password" autocomplete="new-password" />
+      }
+    </label>
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="btn" (click)="adding.set(false); error.set(null)">
+        Annuler
+      </button>
+      <button type="submit" class="btn btn-primary" [disabled]="pending()">Ajouter</button>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal
+  [heading]="'Modifier ' + (editing()?.displayName ?? '')"
+  [open]="editing() !== null"
+  (closed)="editing.set(null); error.set(null)"
+>
+  <form class="form" [formGroup]="editForm" (ngSubmit)="saveEdit()">
+    <label class="field">
+      <span>Prénom</span>
+      <input formControlName="displayName" />
+    </label>
+    <label class="field">
+      @if (editing()?.role === 'child') {
+        <span>Nouveau code</span>
+        <input formControlName="password" inputmode="numeric" autocomplete="off" />
+        <small class="hint">Laissez vide pour garder le code actuel.</small>
+      } @else {
+        <span>Nouveau mot de passe</span>
+        <input formControlName="password" type="password" autocomplete="new-password" />
+        <small class="hint">Laissez vide pour garder le mot de passe actuel.</small>
+      }
+    </label>
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+    <div class="actions">
+      @if (editing(); as member) {
+        <button type="button" class="btn btn-ghost btn-danger" (click)="remove(member)">
+          Supprimer
+        </button>
+      }
+      <button type="button" class="btn" (click)="editing.set(null); error.set(null)">
+        Annuler
+      </button>
+      <button type="submit" class="btn btn-primary" [disabled]="pending()">Enregistrer</button>
+    </div>
+  </form>
+</app-modal>

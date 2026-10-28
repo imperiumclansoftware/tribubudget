@@ -1,0 +1,263 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>Opérations</h1>
+      <p class="subtitle">Revenus et dépenses des comptes de la famille</p>
+    </div>
+    <div class="actions">
+      <button
+        type="button"
+        class="btn"
+        (click)="openTransfer()"
+        [disabled]="(accounts.value()?.length ?? 0) < 2"
+      >
+        <app-icon name="transfer" /> Virement
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="openNew()"
+        [disabled]="!accounts.value()?.length"
+      >
+        <app-icon name="plus" /> Nouvelle opération
+      </button>
+    </div>
+  </header>
+
+  <div class="filters">
+    <app-operation-tabs />
+    <app-month-picker [(month)]="month" />
+    <label class="filter">
+      <span class="visually-hidden">Compte</span>
+      <select [ngModel]="accountFilter()" (ngModelChange)="accountFilter.set($event)">
+        <option [ngValue]="null">Tous les comptes</option>
+        @for (a of accounts.value(); track a.id) {
+          <option [ngValue]="a.id">{{ a.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="filter">
+      <span class="visually-hidden">Catégorie</span>
+      <select [ngModel]="categoryFilter()" (ngModelChange)="categoryFilter.set($event)">
+        <option [ngValue]="null">Toutes les catégories</option>
+        @for (c of categories.value(); track c.id) {
+          <option [ngValue]="c.id">{{ c.name }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <div class="summary">
+    <span
+      >Revenus <strong class="amount amount-in">{{ totals().income | euros }}</strong></span
+    >
+    <span
+      >Dépenses <strong class="amount">{{ totals().expenses | euros }}</strong></span
+    >
+  </div>
+
+  @if (loadError(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+
+  <div class="days" [class.loading]="loading()">
+    @for (day of days(); track day.date) {
+      <section class="day">
+        <h2 class="day-title">{{ day.label }}</h2>
+        <ul class="transaction-list">
+          @for (o of day.operations; track o.id) {
+            <li class="transaction-item">
+              @if (o.transfer; as t) {
+                <span class="transfer-icon" aria-hidden="true">
+                  <app-icon name="transfer" [size]="16" />
+                </span>
+                <div class="grow">
+                  <strong class="ellipsis">{{ o.label }}</strong>
+                  <span class="muted ellipsis">
+                    Virement {{ o.amount < 0 ? 'vers' : 'depuis' }}
+                    {{ accountName(t.counterpartAccountId) }} · {{ accountName(o.accountId) }}
+                  </span>
+                </div>
+                <span class="amount transfer-amount">{{ o.amount | euros: true }}</span>
+                <button
+                  type="button"
+                  class="btn btn-icon"
+                  (click)="openTransfer(o)"
+                  [attr.aria-label]="'Modifier le virement ' + o.label"
+                >
+                  <app-icon name="edit" [size]="18" />
+                </button>
+              } @else {
+                <span
+                  class="dot"
+                  [style.background]="category(o.categoryId)?.color ?? 'var(--border-color)'"
+                  aria-hidden="true"
+                ></span>
+                <div class="grow">
+                  <strong class="ellipsis">{{ o.label }}</strong>
+                  <span class="muted ellipsis">
+                    {{ category(o.categoryId)?.name ?? 'Sans catégorie' }} ·
+                    {{ accountName(o.accountId) }}
+                  </span>
+                </div>
+                @if (o.recurringId) {
+                  <span class="recurring" title="Opération récurrente">
+                    <app-icon name="repeat" [size]="16" />
+                    <span class="visually-hidden">Opération récurrente</span>
+                  </span>
+                }
+                <span class="amount" [class.amount-in]="o.amount > 0">{{
+                  o.amount | euros: true
+                }}</span>
+                <button
+                  type="button"
+                  class="btn btn-icon"
+                  (click)="openEdit(o)"
+                  [attr.aria-label]="'Modifier ' + o.label"
+                >
+                  <app-icon name="edit" [size]="18" />
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    } @empty {
+      @if (list()) {
+        <p class="card empty">Aucune opération pour cette période.</p>
+      } @else {
+        <p class="empty">Chargement…</p>
+      }
+    }
+  </div>
+</div>
+
+<app-modal
+  [heading]="isEditing(editing()) ? 'Modifier l’opération' : 'Nouvelle opération'"
+  [open]="editing() !== null"
+  (closed)="editing.set(null); formError.set(null)"
+>
+  <form class="form" [formGroup]="form" (ngSubmit)="save()">
+    <div class="segmented" role="radiogroup" aria-label="Type">
+      <label><input type="radio" formControlName="type" value="expense" />Dépense</label>
+      <label><input type="radio" formControlName="type" value="income" />Revenu</label>
+    </div>
+    <div class="form-row">
+      <label class="field">
+        <span>Montant (€)</span>
+        <input formControlName="amount" inputmode="decimal" placeholder="0,00" />
+      </label>
+      <label class="field">
+        <span>Date</span>
+        <input formControlName="date" type="date" />
+      </label>
+    </div>
+    <label class="field">
+      <span>Libellé</span>
+      <input formControlName="label" placeholder="Courses, loyer, salaire…" />
+    </label>
+    <div class="form-row">
+      <label class="field">
+        <span>Compte</span>
+        <select formControlName="accountId">
+          @for (a of accounts.value(); track a.id) {
+            <option [ngValue]="a.id">{{ a.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span>Catégorie</span>
+        <select formControlName="categoryId">
+          <option [ngValue]="0">Sans catégorie</option>
+          @for (c of formCategories(); track c.id) {
+            <option [ngValue]="c.id">{{ c.name }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    @if (formError(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+
+    <div class="actions">
+      @if (editing(); as op) {
+        @if (isEditing(op)) {
+          <button type="button" class="btn btn-danger btn-ghost" (click)="remove(op)">
+            <app-icon name="trash" [size]="18" /> Supprimer
+          </button>
+        }
+      }
+      <button type="button" class="btn" (click)="editing.set(null); formError.set(null)">
+        Annuler
+      </button>
+      <button type="submit" class="btn btn-primary" [disabled]="pending()">Enregistrer</button>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal
+  [heading]="transferEditing()?.id ? 'Modifier le virement' : 'Virement entre comptes'"
+  [open]="transferEditing() !== null"
+  (closed)="closeTransfer()"
+>
+  <form class="form" [formGroup]="transferForm" (ngSubmit)="saveTransfer()">
+    <div class="form-row">
+      <label class="field">
+        <span>Depuis</span>
+        <select formControlName="fromAccountId">
+          @for (a of accounts.value(); track a.id) {
+            <option [ngValue]="a.id">{{ a.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span>Vers</span>
+        <select formControlName="toAccountId">
+          @for (a of accounts.value(); track a.id) {
+            <option [ngValue]="a.id" [disabled]="a.id === transferFrom()">{{ a.name }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <div class="form-row">
+      <label class="field">
+        <span>Montant (€)</span>
+        <input formControlName="amount" inputmode="decimal" placeholder="0,00" />
+      </label>
+      <label class="field">
+        <span>Date</span>
+        <input formControlName="date" type="date" />
+      </label>
+    </div>
+    <label class="field">
+      <span>Libellé</span>
+      <input formControlName="label" placeholder="Virement" />
+    </label>
+    @if (transferPreview(); as preview) {
+      <p class="muted preview">
+        {{ preview.fromName }} : {{ preview.fromBefore | euros }} →
+        <strong [class.negative]="preview.fromAfter < 0">{{ preview.fromAfter | euros }}</strong>
+        @if (preview.toSavings) {
+          <span class="block">L’argent viré sur {{ preview.toName }} alimente ses projets.</span>
+        }
+      </p>
+    }
+
+    @if (formError(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+
+    <div class="actions">
+      @if (transferEditing()?.id) {
+        <button type="button" class="btn btn-danger btn-ghost" (click)="removeTransfer()">
+          <app-icon name="trash" [size]="18" /> Supprimer
+        </button>
+      }
+      <button type="button" class="btn" (click)="closeTransfer()">Annuler</button>
+      <button type="submit" class="btn btn-primary" [disabled]="pending()">
+        {{ transferEditing()?.id ? 'Enregistrer' : 'Virer' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

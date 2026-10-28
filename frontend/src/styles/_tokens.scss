@@ -1,0 +1,107 @@
+// Semantic tokens of the theme (themecss/gemini-code-1793191511734.css), with a few additions
+// marked "TribuBudget" where the application needs more than the theme provides.
+
+:root {
+  color-scheme: light;
+
+  /* --- Couleurs de Base & Fonds --- */
+  --bg-main: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f1f5f9;
+
+  /* --- Typographie --- */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+
+  /* --- Identité & Finances (Sémantique) --- */
+  --primary: #2563eb; /* Bleu action / principal */
+  --primary-hover: #1d4ed8;
+  --success: #10b981; /* Vert rentrées / épargne */
+  --success-bg: #ecfdf5;
+  --danger: #ef4444; /* Rouge dépenses / dépassement */
+  --danger-bg: #fef2f2;
+  --warning: #f59e0b; /* Orange alerte budget */
+
+  /* TribuBudget: tinted background of the primary color (selected tab, highlights) */
+  --primary-bg: #eff6ff;
+  /* TribuBudget: the semantic colors as text. --success, --danger and --warning are too light to
+     be read on a light surface (2.5:1, 3.8:1, 2.1:1): they color fills and icons, these color
+     words and amounts (4.5:1 and more) */
+  --success-text: #047857;
+  --danger-text: #b91c1c;
+  --warning-text: #92400e;
+  --warning-bg: #fffbeb;
+
+  /* --- UI / Ergonomie Mobile --- */
+  --border-color: #e2e8f0;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-floating: 0 -4px 20px -2px rgb(0 0 0 / 0.08); /* Pour la barre de nav mobile */
+
+  /* --- Espacements tactiles (Mobile First : min 44x44px) --- */
+  --touch-target: 48px;
+
+  /* TribuBudget: heights of the fixed bars, to keep the content clear of them */
+  --app-bar-height: 56px;
+  --nav-height: 68px;
+
+  /* TribuBudget: desktop (1024px and wider): side navigation, and the width of the pages */
+  --sidebar-width: 256px;
+  --content-max: 1200px;
+
+  /* TribuBudget: charts (validated data-visualization palette: series told apart with color
+     vision deficiencies; one axis; meters on a lighter step of their own hue) */
+  --series-income: #2a78d6;
+  --series-expense: #eb6834;
+  --meter-fill: #2a78d6;
+  --meter-track: #cde2fb;
+  --critical: #d03b3b;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+}
+
+/* --- Mode Sombre Automatique --- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --bg-main: #0f172a;
+    --bg-surface: #1e293b;
+    --bg-subtle: #334155;
+
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+
+    --primary: #3b82f6;
+    --primary-hover: #60a5fa;
+    --success: #34d399;
+    --success-bg: rgba(16, 185, 129, 0.15);
+    --danger: #f87171;
+    --danger-bg: rgba(239, 68, 68, 0.15);
+
+    --border-color: #334155;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+    --shadow-floating: 0 -4px 20px -2px rgb(0 0 0 / 0.4);
+
+    --primary-bg: rgba(59, 130, 246, 0.15);
+    --success-text: #34d399;
+    --danger-text: #f87171;
+    --warning-text: #fbbf24;
+    --warning-bg: rgba(245, 158, 11, 0.15);
+
+    --series-income: #3987e5;
+    --series-expense: #d95926;
+    --meter-fill: #3987e5;
+    --meter-track: #184f95;
+    --critical: #e66767;
+    --grid: #2c3a4f;
+    --axis: #475569;
+  }
+}

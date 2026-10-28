@@ -1,0 +1,216 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>Tableau de bord</h1>
+      <p class="subtitle">Où en est le budget de la famille</p>
+    </div>
+    <app-month-picker [(month)]="month" />
+  </header>
+
+  @if (error(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+
+  @if (data(); as d) {
+    <div class="stack" [class.loading]="loading()">
+      @if (d.pendingRequests > 0) {
+        <a class="notice requests" routerLink="/demandes">
+          <app-icon name="inbox" />
+          <span class="grow">
+            {{ d.pendingRequests }}
+            {{
+              d.pendingRequests > 1
+                ? 'demandes des enfants attendent'
+                : 'demande d’un enfant attend'
+            }}
+            votre réponse
+          </span>
+          <app-icon name="right" />
+        </a>
+      }
+
+      <div class="overview">
+        <section class="card-balance" aria-label="Solde">
+          <span class="tile-label">Solde de tous les comptes</span>
+          <span
+            class="amount-large"
+            [class.positive]="d.totalBalance > 0"
+            [class.negative]="d.totalBalance < 0"
+            >{{ d.totalBalance | euros }}</span
+          >
+        </section>
+
+        <section class="tiles" aria-label="Chiffres du mois">
+          <div class="card tile">
+            <span class="tile-label">Revenus de {{ d.month | month }}</span>
+            <span class="tile-value">{{ d.income | euros }}</span>
+          </div>
+          <div class="card tile">
+            <span class="tile-label">Dépenses de {{ d.month | month }}</span>
+            <span class="tile-value">{{ d.expenses | euros }}</span>
+          </div>
+          <div class="card tile wide">
+            <span class="tile-label">Reste du mois</span>
+            <span class="tile-value" [class.negative]="d.income - d.expenses < 0">
+              {{ d.income - d.expenses | euros: true }}
+            </span>
+          </div>
+        </section>
+      </div>
+
+      <div class="cards">
+        <section class="card">
+          <div class="card-header">
+            <h2>Dépenses par catégorie</h2>
+            @if (overBudget() > 0) {
+              <span class="badge badge-negative">
+                <app-icon name="alert" [size]="14" />
+                {{ overBudget() }} {{ overBudget() > 1 ? 'budgets dépassés' : 'budget dépassé' }}
+              </span>
+            }
+          </div>
+          @if (d.categories.length || d.uncategorized) {
+            <ul class="meters">
+              @for (c of d.categories; track c.id) {
+                <li>
+                  <app-budget-meter
+                    [name]="c.name"
+                    [color]="c.color"
+                    [spent]="c.spent"
+                    [budget]="c.budget"
+                  />
+                </li>
+              }
+              @if (d.uncategorized) {
+                <li>
+                  <app-budget-meter
+                    name="Sans catégorie"
+                    color="var(--text-secondary)"
+                    [spent]="d.uncategorized"
+                  />
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="empty">
+              Aucune dépense ce mois-ci.
+              <a routerLink="/operations">Ajouter une opération</a>
+            </p>
+          }
+          <p class="more"><a routerLink="/budgets">Régler les budgets</a></p>
+        </section>
+
+        <section class="card">
+          <h2>Les 6 derniers mois</h2>
+          <app-history-chart [months]="d.history" />
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h2>Projets réalisables</h2>
+            <a class="btn btn-small" routerLink="/projets">Projets</a>
+          </div>
+          <ul class="list">
+            @for (p of d.fundableProjects; track p.id) {
+              <li>
+                <span class="done" aria-hidden="true"><app-icon name="check" [size]="16" /></span>
+                <div class="grow">
+                  <strong class="ellipsis block">{{ p.name }}</strong>
+                  <span class="muted block">{{ p.accountName }}</span>
+                </div>
+                <span class="amount">{{ p.target | euros }}</span>
+              </li>
+            } @empty {
+              <li class="empty">
+                Aucun projet n’est encore financé.
+                <a routerLink="/projets">Voir les projets</a>
+              </li>
+            }
+          </ul>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h2>Prochaines échéances</h2>
+            <a class="btn btn-small" routerLink="/operations/recurrentes">Gérer</a>
+          </div>
+          <ul class="list">
+            @for (u of d.upcoming; track u.id) {
+              <li>
+                <span
+                  class="dot"
+                  [style.background]="u.categoryColor ?? 'var(--border-color)'"
+                  aria-hidden="true"
+                ></span>
+                <div class="grow">
+                  <strong class="ellipsis block">{{ u.label }}</strong>
+                  <span class="muted block">{{ u.date | day }}</span>
+                </div>
+                <span class="amount" [class.amount-in]="u.amount > 0">{{
+                  u.amount | euros: true
+                }}</span>
+              </li>
+            } @empty {
+              <li class="empty">
+                Rien dans les 30 prochains jours.
+                <a routerLink="/operations/recurrentes">Ajouter le loyer, les abonnements…</a>
+              </li>
+            }
+          </ul>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h2>Comptes</h2>
+            <a class="btn btn-small" routerLink="/comptes">Gérer</a>
+          </div>
+          <ul class="list">
+            @for (a of d.accounts; track a.id) {
+              <li>
+                <app-icon name="wallet" />
+                <div class="grow">
+                  <strong class="ellipsis block">{{ a.name }}</strong>
+                  <span class="muted block">{{ accountTypes[a.type] }}</span>
+                </div>
+                <span class="amount" [class.amount-in]="a.balance > 0">{{
+                  a.balance | euros
+                }}</span>
+              </li>
+            } @empty {
+              <li class="empty">Aucun compte.</li>
+            }
+          </ul>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h2>Tirelires des enfants</h2>
+            <a class="btn btn-small" routerLink="/famille">Famille</a>
+          </div>
+          <ul class="list">
+            @for (c of d.children; track c.id) {
+              <li>
+                <app-icon name="piggy" />
+                <a class="grow ellipsis child" [routerLink]="['/famille', c.id]">{{
+                  c.displayName
+                }}</a>
+                <span class="amount">{{ c.balance | euros }}</span>
+              </li>
+            } @empty {
+              <li class="empty">
+                Pas encore d’enfant. <a routerLink="/famille">Ajouter un enfant</a>
+              </li>
+            }
+          </ul>
+          @if (d.children.length && !d.activeAllowances) {
+            <p class="muted more">
+              Aucun argent de poche automatique : réglez-le depuis la fiche d’un enfant.
+            </p>
+          }
+        </section>
+      </div>
+    </div>
+  } @else if (!error()) {
+    <p class="empty">Chargement…</p>
+  }
+</div>

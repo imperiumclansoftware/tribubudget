@@ -1,0 +1,438 @@
+// Building blocks of the pages, written against the theme's tokens. Mobile first: the base rules
+// are for phones, the media queries widen the layout for tablets (768px).
+
+/* Page */
+
+.page {
+  display: grid;
+  /* minmax(0, …): a long unbreakable line (ellipsis) never widens the page past the screen */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  .subtitle {
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+  .actions {
+    justify-content: flex-start;
+  }
+}
+
+/* Phones: the main action of a page takes the whole width, easy to reach with a thumb */
+.page-header > .btn-primary,
+.page-header > .actions {
+  width: 100%;
+}
+.page-header > .actions > .btn {
+  flex: 1;
+}
+
+.page.narrow {
+  max-width: 34rem;
+}
+
+/* Cards */
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  min-width: 0;
+
+  > h2 {
+    margin-bottom: 12px;
+  }
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+/* Buttons: never smaller than the touch target */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--touch-target);
+  padding: 0 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+
+  &:hover:not(:disabled) {
+    background: var(--bg-subtle);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--text-inverse);
+
+  &:hover:not(:disabled) {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+  }
+}
+
+.btn-danger {
+  color: var(--danger-text);
+}
+
+.btn-ghost {
+  border-color: transparent;
+  background: transparent;
+}
+
+.btn-icon {
+  width: var(--touch-target);
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+/* Smaller text and padding, same touch target */
+.btn-small {
+  padding: 0 14px;
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Forms */
+
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+
+  > span {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+
+  .hint {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='color']),
+select,
+textarea {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 16px; /* Évite le zoom automatique sur iOS */
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+  &:focus {
+    border-color: var(--primary);
+    outline: 2px solid var(--primary-bg);
+    outline-offset: 0;
+  }
+}
+
+input[type='color'] {
+  width: var(--touch-target);
+  height: var(--touch-target);
+  padding: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
+input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--primary);
+}
+
+/* The whole label is the touch target of its checkbox */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--touch-target);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmented {
+  display: flex;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  gap: 4px;
+
+  > label,
+  > a {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--touch-target);
+    padding: 0 16px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-secondary);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    cursor: pointer;
+  }
+  > label:has(input:checked),
+  > a.active {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+  }
+  > label:has(input:focus-visible) {
+    outline: 2px solid var(--primary);
+  }
+}
+
+/* Messages */
+
+.error {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  font-weight: 600;
+}
+
+.notice {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-weight: 600;
+}
+
+/* Lists inside a card */
+
+.list {
+  > li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: calc(var(--touch-target) + 8px);
+    padding: 8px 0;
+    border-top: 1px solid var(--border-color);
+    min-width: 0;
+  }
+  > li:first-child {
+    border-top: 0;
+  }
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.block {
+  display: block;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Amounts */
+
+.amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.amount-in {
+  color: var(--success-text);
+}
+.amount-out {
+  color: var(--text-primary);
+}
+
+.dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.badge-accent {
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+.badge-positive {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+.badge-negative {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+.badge-warning {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.loading {
+  opacity: 0.55;
+  transition: opacity 0.2s;
+}
+
+/* Tablets */
+
+@media (min-width: 600px) {
+  .form-row {
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  }
+
+  .page-header > .btn-primary,
+  .page-header > .actions {
+    width: auto;
+  }
+  .page-header > .actions > .btn {
+    flex: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .page {
+    gap: 20px;
+  }
+  .card {
+    padding: 20px;
+  }
+  .grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+}
+
+/* The month picker of a page header takes the whole width on phones */
+.page-header > app-month-picker {
+  width: 100%;
+}
+@media (min-width: 600px) {
+  .page-header > app-month-picker {
+    width: auto;
+  }
+}
+
+/* Desktop: pages centered at a readable width, hover feedback for the mouse */
+@media (min-width: 1024px) {
+  .page {
+    max-width: var(--content-max);
+    margin: 0 auto;
+    gap: 24px;
+  }
+  .page.narrow {
+    max-width: 34rem;
+  }
+  .card {
+    padding: 24px;
+  }
+  .grid-2 {
+    gap: 24px;
+  }
+  .transaction-item {
+    transition: border-color 0.15s;
+  }
+  .transaction-item:hover {
+    border-color: var(--text-muted);
+  }
+}

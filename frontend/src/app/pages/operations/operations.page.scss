@@ -1,0 +1,78 @@
+.filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+/* Tablets: tabs and month on one line, the two filters on the next */
+@media (min-width: 600px) {
+  .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Large desktops: everything on one line */
+@media (min-width: 1280px) {
+  .filters {
+    /* The tabs and the month at their natural width, the two filters share the rest */
+    grid-template-columns: auto minmax(17rem, auto) minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .filters:has(> :only-child) {
+    grid-template-columns: minmax(0, 22rem);
+  }
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.days {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.day-title {
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--text-secondary);
+}
+
+.list .grow > *,
+.transaction-item .grow > * {
+  display: block;
+}
+
+.recurring {
+  display: inline-flex;
+  color: var(--text-secondary);
+}
+
+.transfer-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+
+/* Money moved, not earned nor spent */
+.transfer-amount {
+  color: var(--text-secondary);
+}
+
+.preview .negative {
+  color: var(--danger-text);
+}

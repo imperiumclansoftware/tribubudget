@@ -1,0 +1,61 @@
+.welcome {
+  line-height: 1.55;
+}
+
+.section-title {
+  margin-bottom: 0.75rem;
+}
+
+.children {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem;
+}
+
+.child {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+}
+
+.child-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: var(--primary-bg);
+  color: var(--primary);
+  font-weight: 900;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+
+  &.small {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 0.95rem;
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+  }
+}
+
+.balance {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.block {
+  display: block;
+}
+
+.rights {
+  margin-top: 0.75rem;
+}
