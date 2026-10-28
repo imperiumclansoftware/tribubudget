@@ -31,14 +31,20 @@ import { Icon } from './icon';
       >
         <span class="fill" [class.over]="over()" [style.width.%]="percent()"></span>
       </div>
-      @if (over()) {
-        <p class="status over">
-          <app-icon name="alert" [size]="15" /> Dépassé de {{ format(spent() - budget) }}
-        </p>
-      } @else {
-        <p class="status">Reste {{ format(budget - spent()) }}</p>
-      }
     }
+    <!-- The status, and the actions given by the page (edit, delete) on the same line -->
+    <div class="foot">
+      @if (budget(); as budget) {
+        @if (over()) {
+          <p class="status over">
+            <app-icon name="alert" [size]="15" /> Dépassé de {{ format(spent() - budget) }}
+          </p>
+        } @else {
+          <p class="status">Reste {{ format(budget - spent()) }}</p>
+        }
+      }
+      <ng-content />
+    </div>
   `,
   styles: `
     :host {
@@ -69,7 +75,16 @@ import { Icon } from './icon';
     .fill.over {
       background: var(--critical);
     }
+    .foot {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .foot:empty {
+      display: none;
+    }
     .status {
+      flex: 1;
       font-size: 0.85rem;
       color: var(--text-secondary);
     }

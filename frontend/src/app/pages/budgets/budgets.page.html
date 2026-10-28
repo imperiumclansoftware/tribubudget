@@ -5,15 +5,21 @@
       <p class="subtitle">Un plafond de dépenses par mois et par catégorie</p>
     </div>
     <app-month-picker [(month)]="month" />
+    <button type="button" class="btn btn-primary" (click)="openNew()">
+      <app-icon name="plus" /> Nouveau budget
+    </button>
   </header>
 
   @if (loadError(); as message) {
     <p class="error" role="alert">{{ message }}</p>
   }
+  @if (formError() && !editing()) {
+    <p class="error" role="alert">{{ formError() }}</p>
+  }
 
   <section class="card" [class.loading]="loading()">
     <div class="card-header">
-      <h2>Catégories avec un budget</h2>
+      <h2>Mes budgets</h2>
       @if (withBudget().length) {
         <span class="muted"
           >{{ totals().spent | euros }} dépensés sur {{ totals().budget | euros }}</span
@@ -29,32 +35,56 @@
             [color]="row.category.color"
             [spent]="row.spent"
             [budget]="row.category.monthlyBudget"
-          />
-          <button
-            type="button"
-            class="btn btn-icon"
-            (click)="edit(row.category)"
-            [attr.aria-label]="'Modifier le budget ' + row.category.name"
           >
-            <app-icon name="edit" [size]="18" />
-          </button>
+            <button
+              type="button"
+              class="btn btn-icon"
+              (click)="openEdit(row.category)"
+              [attr.aria-label]="'Modifier le budget ' + row.category.name"
+              [title]="'Modifier le budget ' + row.category.name"
+            >
+              <app-icon name="edit" [size]="18" />
+            </button>
+            <button
+              type="button"
+              class="btn btn-icon btn-danger"
+              (click)="remove(row.category)"
+              [disabled]="pending()"
+              [attr.aria-label]="'Supprimer le budget ' + row.category.name"
+              [title]="'Supprimer le budget ' + row.category.name"
+            >
+              <app-icon name="trash" [size]="18" />
+            </button>
+          </app-budget-meter>
         </li>
       } @empty {
-        <li class="empty">Aucun budget pour l’instant : choisissez une catégorie ci-dessous.</li>
+        <li class="empty">
+          Aucun budget pour l’instant.
+          <button type="button" class="btn btn-small" (click)="openNew()">
+            <app-icon name="plus" [size]="16" /> Créer un budget
+          </button>
+        </li>
       }
     </ul>
   </section>
 
   @if (withoutBudget().length) {
     <section class="card">
-      <h2>Sans budget</h2>
+      <h2>Catégories sans budget</h2>
       <ul class="list">
         @for (row of withoutBudget(); track row.category.id) {
           <li>
             <span class="dot" [style.background]="row.category.color" aria-hidden="true"></span>
-            <span class="grow ellipsis">{{ row.category.name }}</span>
-            <span class="muted">{{ row.spent | euros }} ce mois</span>
-            <button type="button" class="btn btn-small" (click)="edit(row.category)">
+            <div class="grow">
+              <span class="block ellipsis">{{ row.category.name }}</span>
+              <span class="muted">{{ row.spent | euros }} ce mois</span>
+            </div>
+            <button
+              type="button"
+              class="btn btn-small"
+              (click)="openNew(row.category)"
+              [attr.aria-label]="'Créer un budget pour ' + row.category.name"
+            >
               <app-icon name="plus" [size]="16" /> Budget
             </button>
           </li>
@@ -64,41 +94,56 @@
   }
 </div>
 
-<app-modal
-  [heading]="'Budget : ' + (editing()?.name ?? '')"
-  [open]="editing() !== null"
-  (closed)="editing.set(null); formError.set(null)"
->
-  <form class="form" (ngSubmit)="save()">
+<app-modal [heading]="heading()" [open]="editing() !== null" (closed)="close()">
+  <form class="form" [formGroup]="form" (ngSubmit)="save()">
+    @if (editing() === 'new') {
+      <label class="field">
+        <span>Catégorie</span>
+        <select formControlName="categoryId">
+          @for (row of withoutBudget(); track row.category.id) {
+            <option [ngValue]="row.category.id">{{ row.category.name }}</option>
+          }
+          <option [ngValue]="NEW_CATEGORY">Nouvelle catégorie…</option>
+        </select>
+      </label>
+      @if (creatingCategory()) {
+        <div class="form-row new-category">
+          <label class="field">
+            <span>Nom de la catégorie</span>
+            <input formControlName="name" placeholder="Animaux, Vacances, Cadeaux…" />
+          </label>
+          <label class="field color">
+            <span>Couleur</span>
+            <input formControlName="color" type="color" />
+          </label>
+        </div>
+      }
+    }
     <label class="field">
       <span>Plafond mensuel (€)</span>
-      <input
-        name="amount"
-        [ngModel]="amount()"
-        (ngModelChange)="amount.set($event)"
-        inputmode="decimal"
-        placeholder="400"
-      />
+      <input formControlName="amount" inputmode="decimal" placeholder="400" />
       <small class="hint">S’applique à chaque mois.</small>
     </label>
     @if (formError(); as message) {
       <p class="error" role="alert">{{ message }}</p>
     }
     <div class="actions">
-      @if (editing()?.monthlyBudget !== null) {
-        <button
-          type="button"
-          class="btn btn-ghost btn-danger"
-          (click)="save(true)"
-          [disabled]="pending()"
-        >
-          Retirer le budget
-        </button>
+      @if (editing(); as category) {
+        @if (isEditing(category)) {
+          <button
+            type="button"
+            class="btn btn-ghost btn-danger"
+            (click)="remove(category)"
+            [disabled]="pending()"
+          >
+            <app-icon name="trash" [size]="18" /> Supprimer
+          </button>
+        }
       }
-      <button type="button" class="btn" (click)="editing.set(null); formError.set(null)">
-        Annuler
+      <button type="button" class="btn" (click)="close()">Annuler</button>
+      <button type="submit" class="btn btn-primary" [disabled]="pending()">
+        {{ editing() === 'new' ? 'Créer le budget' : 'Enregistrer' }}
       </button>
-      <button type="submit" class="btn btn-primary" [disabled]="pending()">Enregistrer</button>
     </div>
   </form>
 </app-modal>

@@ -8,7 +8,12 @@
   li {
     display: flex;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: 8px;
+  }
+  li.empty {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
   }
 }
 
@@ -17,4 +22,9 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 40px;
   }
+}
+
+/* Name and color of a category created with its budget */
+.new-category {
+  grid-template-columns: minmax(0, 1fr) auto;
 }
