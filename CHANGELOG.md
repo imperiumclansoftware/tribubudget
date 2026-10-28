@@ -11,7 +11,8 @@ Première version de TribuBudget, le budget de toute la famille.
 - **Virements** entre les comptes de la famille, sans fausser les revenus et les dépenses.
 - **Opérations récurrentes** (loyer, abonnements, salaire) : hebdomadaires, mensuelles, trimestrielles ou
   annuelles, enregistrées seules à leur date, avec date de fin facultative.
-- **Budgets mensuels** par catégorie, dépassements signalés.
+- **Budgets mensuels** par catégorie, créés (au besoin avec une nouvelle catégorie) et supprimés librement,
+  dépassements signalés.
 - **Projets d’épargne** rattachés à un compte d’épargne, financés par ordre de priorité au-dessus d’un
   plancher ; les projets réalisables sont mis en avant.
 - **Argent de poche** automatique (chaque semaine ou chaque mois), pris sur un compte du foyer ; avances
