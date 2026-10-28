@@ -1,20 +1,27 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
-import { authGuard, childGuard, guestGuard, parentGuard } from './core/auth/auth.guards';
+import {
+  authGuard,
+  childGuard,
+  guestGuard,
+  installedGuard,
+  parentGuard,
+  setupGuard,
+} from './core/auth/auth.guards';
 import { AuthService } from './core/auth/auth.service';
 
 export const routes: Routes = [
   {
-    path: 'connexion',
-    canActivate: [guestGuard],
-    title: 'Connexion · TribuBudget',
-    loadComponent: () => import('./pages/auth/login.page').then((m) => m.LoginPage),
+    path: 'installation',
+    canActivate: [setupGuard],
+    title: 'Installation · TribuBudget',
+    loadComponent: () => import('./pages/auth/setup.page').then((m) => m.SetupPage),
   },
   {
-    path: 'inscription',
-    canActivate: [guestGuard],
-    title: 'Créer ma famille · TribuBudget',
-    loadComponent: () => import('./pages/auth/register.page').then((m) => m.RegisterPage),
+    path: 'connexion',
+    canActivate: [installedGuard, guestGuard],
+    title: 'Connexion · TribuBudget',
+    loadComponent: () => import('./pages/auth/login.page').then((m) => m.LoginPage),
   },
   {
     path: '',

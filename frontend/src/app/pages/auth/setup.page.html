@@ -1,0 +1,75 @@
+<main class="auth-card card">
+  <div class="brand">
+    <span class="logo"><app-icon name="piggy" [size]="34" /></span>
+    <h1>Bienvenue sur TribuBudget</h1>
+    <p>
+      @if (step() === 'code') {
+        Installation : étape 1 sur 2
+      } @else {
+        Installation : étape 2 sur 2
+      }
+    </p>
+  </div>
+
+  @if (step() === 'code') {
+    <form class="form" [formGroup]="codeForm" (ngSubmit)="verify()">
+      <p class="intro">
+        Pour que personne d’autre ne s’installe à votre place, saisissez le code d’installation
+        affiché dans les journaux du serveur :
+      </p>
+      <pre class="command">docker logs tribubudget</pre>
+      <label class="field">
+        <span>Code d’installation</span>
+        <input
+          formControlName="code"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          placeholder="ABCD-EFGH"
+          class="code"
+        />
+      </label>
+
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+
+      <button type="submit" class="btn btn-primary" [disabled]="pending()">
+        {{ pending() ? 'Vérification…' : 'Continuer' }}
+      </button>
+    </form>
+  } @else {
+    <form class="form" [formGroup]="form" (ngSubmit)="install()">
+      <p class="intro">
+        Créez votre famille et votre compte de parent. Vous ajouterez ensuite l’autre parent et les
+        enfants depuis la page <strong>Famille</strong>.
+      </p>
+      <label class="field">
+        <span>Nom de la famille</span>
+        <input formControlName="familyName" placeholder="Famille Martin" />
+      </label>
+      <label class="field">
+        <span>Votre prénom</span>
+        <input formControlName="displayName" autocomplete="given-name" />
+      </label>
+      <label class="field">
+        <span>Identifiant de connexion</span>
+        <input formControlName="username" autocomplete="username" autocapitalize="none" />
+        <small class="hint">Lettres, chiffres, points ou tirets.</small>
+      </label>
+      <label class="field">
+        <span>Mot de passe</span>
+        <input formControlName="password" type="password" autocomplete="new-password" />
+        <small class="hint">8 caractères au moins.</small>
+      </label>
+
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+
+      <button type="submit" class="btn btn-primary" [disabled]="pending()">
+        {{ pending() ? 'Création…' : 'Créer ma famille' }}
+      </button>
+    </form>
+  }
+</main>

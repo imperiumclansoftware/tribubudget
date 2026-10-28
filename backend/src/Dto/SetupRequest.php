@@ -6,10 +6,12 @@ use App\Entity\Family;
 use App\Entity\User;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/** A parent creates their family and becomes its first member. */
-final readonly class RegisterRequest
+/** Installation: the family and its first parent, with the installation code shown on the server. */
+final readonly class SetupRequest
 {
     public function __construct(
+        #[Assert\NotBlank(message: 'Saisissez le code d’installation.')]
+        public string $code = '',
         #[Assert\NotBlank(message: 'Donnez un nom à votre famille.', normalizer: 'trim')]
         #[Assert\Length(max: Family::NAME_MAX_LENGTH, normalizer: 'trim')]
         public string $familyName = '',

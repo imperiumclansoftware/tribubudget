@@ -1,13 +1,13 @@
 framework:
     rate_limiter:
-        # Families created from one IP address
-        registration:
+        # Attempts at the installation code from one IP address
+        setup_code:
             policy: sliding_window
-            limit: 5
-            interval: '1 hour'
+            limit: 10
+            interval: '15 minutes'
 
 when@test:
     framework:
         rate_limiter:
-            registration:
+            setup_code:
                 policy: no_limit

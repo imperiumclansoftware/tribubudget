@@ -7,6 +7,18 @@ export const authGuard: CanActivateFn = async () => {
   return (await inject(AuthService).restoreSession()) || router.createUrlTree(['/connexion']);
 };
 
+/** Before the installation, the sign-in page leads to the installation page. */
+export const installedGuard: CanActivateFn = async () => {
+  const router = inject(Router);
+  return (await inject(AuthService).installed()) || router.createUrlTree(['/installation']);
+};
+
+/** The installation page, only before the installation. */
+export const setupGuard: CanActivateFn = async () => {
+  const router = inject(Router);
+  return !(await inject(AuthService).installed()) || router.createUrlTree(['/connexion']);
+};
+
 export const guestGuard: CanActivateFn = async () => {
   const router = inject(Router);
   return !(await inject(AuthService).restoreSession()) || router.createUrlTree(['/']);

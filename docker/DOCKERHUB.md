@@ -15,8 +15,9 @@ français :
 - **Tableau de bord** : solde, mois en cours, six derniers mois, projets réalisables, prochaines échéances
 - Interface pensée pour le téléphone, jusqu’à l’écran large ; thème clair ou sombre selon le système
 
-L’image contient toute l’application : l’interface Angular et l’API Symfony, servies par
-[FrankenPHP](https://frankenphp.dev) sur le port 80. Il lui faut seulement une base PostgreSQL.
+L’image contient **tout** : l’interface Angular et l’API Symfony servies par [FrankenPHP](https://frankenphp.dev)
+sur le port 80, leur base **PostgreSQL 16** et le planificateur des échéances. Aucun réglage : les secrets et la
+base sont créés au premier lancement.
 
 - Code source : https://github.com/imperiumclansoftware/tribubudget
 - Licence : MIT
@@ -26,103 +27,80 @@ L’image contient toute l’application : l’interface Angular et l’API Symf
 | Tag | Contenu |
 |---|---|
 | `latest` | Dernière version publiée |
-| `0.1.0` | Première version |
+| `0.2.0` | Image tout-en-un (base intégrée, secrets créés au premier lancement), page d’installation avec code |
+| `0.1.0` | Première version (base PostgreSQL séparée) |
 
 Plateforme : `linux/amd64`.
 
 ## Installation
 
-### 1. Le fichier `compose.yaml`
+### En une commande
 
-Dans un dossier vide (par exemple `tribubudget/`), créez ce fichier :
+```bash
+docker run -d --name tribubudget --restart unless-stopped -p 8080:80 -v tribubudget:/data iemperor/tribubudget
+```
+
+### Ou avec Docker Compose / Portainer
 
 ```yaml
-x-tribubudget-environment: &tribubudget-environment
-  APP_SECRET: ${APP_SECRET:?APP_SECRET à renseigner (openssl rand -hex 32)}
-  JWT_PASSPHRASE: ${JWT_PASSPHRASE:?JWT_PASSPHRASE à renseigner (openssl rand -hex 32)}
-  DATABASE_URL: postgresql://tribubudget:${POSTGRES_PASSWORD}@database:5432/tribubudget?serverVersion=16&charset=utf8
-  APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Paris}
-
 services:
   tribubudget:
-    image: iemperor/tribubudget:${TRIBUBUDGET_VERSION:-latest}
+    image: iemperor/tribubudget:latest
+    container_name: tribubudget
     restart: unless-stopped
     ports:
-      - "${TRIBUBUDGET_PORT:-8080}:80"
-    environment: *tribubudget-environment
+      - "8080:80"
+    environment:
+      APP_TIMEZONE: Europe/Paris
     volumes:
       - tribubudget_data:/data
-    depends_on:
-      database:
-        condition: service_healthy
-
-  # Argent de poche et opérations récurrentes enregistrés à leur date, même si personne n’ouvre TribuBudget
-  scheduler:
-    image: iemperor/tribubudget:${TRIBUBUDGET_VERSION:-latest}
-    restart: unless-stopped
-    command: ["tribubudget-scheduler"]
-    environment: *tribubudget-environment
-    healthcheck:
-      disable: true
-    depends_on:
-      tribubudget:
-        condition: service_healthy
-
-  database:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: tribubudget
-      POSTGRES_USER: tribubudget
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD à renseigner}
-    healthcheck:
-      test: ["CMD", "pg_isready", "-d", "tribubudget", "-U", "tribubudget"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    volumes:
-      - database_data:/var/lib/postgresql/data
+    # Laisse à la base le temps de s’arrêter proprement
+    stop_grace_period: 30s
 
 volumes:
   tribubudget_data:
-  database_data:
 ```
-
-### 2. Le fichier `.env`
-
-À côté, un fichier `.env` (générez chaque secret avec `openssl rand -hex 32`) :
-
-```dotenv
-TRIBUBUDGET_PORT=8080
-TRIBUBUDGET_VERSION=latest
-APP_SECRET=
-JWT_PASSPHRASE=
-# Ne le changez plus une fois la base créée
-POSTGRES_PASSWORD=
-APP_TIMEZONE=Europe/Paris
-```
-
-Avec Portainer : collez le `compose.yaml` comme stack et saisissez ces variables dans *Environment variables*.
-
-### 3. Démarrage
 
 ```bash
 docker compose up -d
 ```
 
-Au premier démarrage, la base est créée et les clés de connexion générées (volume `tribubudget_data`).
-Ouvrez ensuite `http://<serveur>:8080`, puis **Créer l’espace de ma famille** : vous en devenez le premier
-parent, et vous ajoutez l’autre parent et les enfants depuis la page *Famille*.
+### Premier lancement
 
-## Variables
+1. Le conteneur crée ses secrets, sa base et ses clés dans le volume `/data` (une minute au plus).
+2. Récupérez le **code d’installation** dans ses journaux :
+   ```bash
+   docker logs tribubudget
+   ```
+   (ou `docker exec tribubudget console app:setup:code`)
+3. Ouvrez `http://<serveur>:8080` : la page d’installation demande ce code, puis crée **votre famille et votre
+   compte de parent**. Ajoutez ensuite l’autre parent et les enfants depuis la page *Famille*.
+
+Le code empêche quelqu’un d’autre d’installer TribuBudget à votre place s’il atteint la page avant vous. Une
+instance accueille une famille : il n’y a pas d’inscription libre.
+
+## Variables (toutes facultatives)
 
 | Variable | Rôle |
 |---|---|
-| `APP_SECRET` | Secret de Symfony (obligatoire) |
-| `JWT_PASSPHRASE` | Protège la clé de signature des sessions (obligatoire) |
-| `DATABASE_URL` | Base PostgreSQL (obligatoire ; composée par le `compose.yaml`) |
 | `APP_TIMEZONE` | Fuseau de « aujourd’hui » : dates de l’argent de poche et des échéances (`Europe/Paris`) |
 | `SCHEDULER_INTERVAL` | Secondes entre deux passages du planificateur (`3600`) |
+| `APP_SECRET`, `JWT_PASSPHRASE` | Pour imposer vos secrets ; sinon créés au premier lancement dans `/data/secrets` |
+| `DATABASE_URL` | Pour utiliser votre propre PostgreSQL au lieu de la base intégrée |
+
+## Le volume `/data`
+
+| Dossier | Contenu |
+|---|---|
+| `postgres/` | La base de données |
+| `secrets/` | Secrets créés au premier lancement (lisibles par root seulement) |
+| `jwt/` | Clés de signature des sessions |
+
+**Sauvegardez ce volume.** Pour un export de la base :
+
+```bash
+docker exec tribubudget su-exec postgres pg_dump tribubudget > tribubudget.sql
+```
 
 ## HTTPS
 
@@ -132,12 +110,14 @@ qui fournit le HTTPS (Caddy, Traefik, Nginx Proxy Manager…).
 ## Mise à jour
 
 ```bash
-docker compose pull && docker compose up -d
+docker pull iemperor/tribubudget && docker rm -f tribubudget   # puis la commande docker run ci-dessus
+# ou : docker compose pull && docker compose up -d
 ```
 
 Les migrations de la base sont jouées au démarrage.
 
-## Sauvegarde
+### Depuis 0.1.0 (base PostgreSQL séparée)
 
-Sauvegardez la base (`docker compose exec database pg_dump -U tribubudget tribubudget > tribubudget.sql`) et le
-volume `tribubudget_data` (clés de connexion).
+Gardez votre compose de la 0.1.0 et ses variables (`DATABASE_URL`, `APP_SECRET`, `JWT_PASSPHRASE`) : avec
+`DATABASE_URL`, l’image utilise votre base et ne démarre pas la sienne. Le service `scheduler` devient
+facultatif (le planificateur tourne aussi dans le conteneur principal).

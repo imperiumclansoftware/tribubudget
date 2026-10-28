@@ -6,7 +6,8 @@ import { AuthResponse, Me } from '../api/models';
 
 const TOKEN_KEY = 'tribubudget.token';
 
-export interface RegisterPayload {
+export interface SetupPayload {
+  code: string;
   familyName: string;
   displayName: string;
   username: string;
@@ -25,6 +26,7 @@ export class AuthService {
   readonly user = this._user.asReadonly();
   readonly isParent = computed(() => this._user()?.role === 'parent');
   readonly isChild = computed(() => this._user()?.role === 'child');
+  private _installed = false;
 
   login(username: string, password: string): Observable<AuthResponse> {
     return this.http
@@ -32,10 +34,31 @@ export class AuthService {
       .pipe(tap((response) => this.storeToken(response.token)));
   }
 
-  /** Creates the family and its first parent, signed in right away. */
-  register(payload: RegisterPayload): Observable<AuthResponse & { user: Me }> {
-    return this.http.post<AuthResponse & { user: Me }>('api/register', payload).pipe(
+  /** Whether the installation has run; known for good once it is true. */
+  async installed(): Promise<boolean> {
+    if (!this._installed) {
+      try {
+        this._installed = (
+          await firstValueFrom(this.http.get<{ installed: boolean }>('api/setup'))
+        ).installed;
+      } catch {
+        // API unreachable: let the pages show the error
+        return true;
+      }
+    }
+    return this._installed;
+  }
+
+  /** First step of the installation page: the code shown on the server. */
+  verifySetupCode(code: string): Observable<void> {
+    return this.http.post<void>('api/setup/verify', { code });
+  }
+
+  /** Installs TribuBudget: creates the family and its first parent, signed in right away. */
+  install(payload: SetupPayload): Observable<AuthResponse & { user: Me }> {
+    return this.http.post<AuthResponse & { user: Me }>('api/setup', payload).pipe(
       tap((response) => {
+        this._installed = true;
         this.storeToken(response.token);
         this._user.set(response.user);
       }),

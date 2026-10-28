@@ -1,5 +1,21 @@
 # Journal des versions
 
+## 0.2.0 — 2026-10-28
+
+**Image tout-en-un et page d’installation.**
+
+- **Image Docker tout-en-un** : l’application, sa base PostgreSQL 16 et le planificateur des échéances dans un
+  seul conteneur, sans aucun réglage : `docker run -d --name tribubudget -p 8080:80 -v tribubudget:/data
+  iemperor/tribubudget`. Au premier lancement, les secrets (`APP_SECRET`, `JWT_PASSPHRASE`, mot de passe de la
+  base), la base et les clés de connexion sont créés dans le volume `/data`. Arrêt propre de la base.
+- **Page d’installation** à la première visite : elle demande le code d’installation affiché dans les journaux du
+  serveur (`docker logs tribubudget`), puis crée la famille et son premier compte parent.
+- **Une instance = une famille** : l’inscription libre est supprimée ; les parents ajoutent les autres membres.
+- Budgets : boutons créer et supprimer (aussi dans 0.1.0).
+
+Mise à jour depuis 0.1.0 : la base séparée reste utilisable en gardant `DATABASE_URL` (et `APP_SECRET`,
+`JWT_PASSPHRASE`) dans le compose ; le service `scheduler` devient facultatif.
+
 ## 0.1.0 — 2026-10-28
 
 Première version de TribuBudget, le budget de toute la famille.

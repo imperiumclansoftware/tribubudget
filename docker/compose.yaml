@@ -1,56 +1,23 @@
-# TribuBudget with its database and its scheduler.
-#   Command line: cp .env.example .env (then fill it in), docker compose up -d
-#   Portainer: paste this file as a stack and enter the variables of .env.example in "Environment variables"
-#   Then open the address of the server (port TRIBUBUDGET_PORT) and create the space of your family.
-
-# Settings of both TribuBudget containers, taken from the variables of the stack (.env or Portainer)
-x-tribubudget-environment: &tribubudget-environment
-  APP_SECRET: ${APP_SECRET:?APP_SECRET must be set (openssl rand -hex 32)}
-  JWT_PASSPHRASE: ${JWT_PASSPHRASE:?JWT_PASSPHRASE must be set (openssl rand -hex 32)}
-  DATABASE_URL: postgresql://tribubudget:${POSTGRES_PASSWORD}@database:5432/tribubudget?serverVersion=16&charset=utf8
-  # Time zone of "today": dates of the allowances and of the recurring operations
-  APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Paris}
+# TribuBudget, all in one (application, database, scheduler): nothing to fill in.
+#   Command line: docker compose up -d   (optional: a .env from .env.example)
+#   Portainer: paste this file as a stack.
+# Then: docker logs tribubudget   gives the installation code, asked at http://<server>:8080
 
 services:
   tribubudget:
     image: iemperor/tribubudget:${TRIBUBUDGET_VERSION:-latest}
+    container_name: tribubudget
     restart: unless-stopped
     ports:
       - "${TRIBUBUDGET_PORT:-8080}:80"
-    environment: *tribubudget-environment
-    volumes:
-      - tribubudget_data:/data
-    depends_on:
-      database:
-        condition: service_healthy
-
-  # Allowances and recurring operations recorded on their date, even when nobody opens TribuBudget
-  scheduler:
-    image: iemperor/tribubudget:${TRIBUBUDGET_VERSION:-latest}
-    restart: unless-stopped
-    command: ["tribubudget-scheduler"]
-    environment: *tribubudget-environment
-    healthcheck:
-      disable: true
-    depends_on:
-      tribubudget:
-        condition: service_healthy
-
-  database:
-    image: postgres:16-alpine
-    restart: unless-stopped
     environment:
-      POSTGRES_DB: tribubudget
-      POSTGRES_USER: tribubudget
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
-    healthcheck:
-      test: ["CMD", "pg_isready", "-d", "tribubudget", "-U", "tribubudget"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      # Time zone of "today": dates of the allowances and of the recurring operations
+      APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Paris}
     volumes:
-      - database_data:/var/lib/postgresql/data
+      # Database, secrets and keys: back this volume up
+      - tribubudget_data:/data
+    # Time for the database to shut down cleanly
+    stop_grace_period: 30s
 
 volumes:
   tribubudget_data:
-  database_data:

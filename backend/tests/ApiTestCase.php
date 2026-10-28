@@ -2,10 +2,15 @@
 
 namespace App\Tests;
 
+use App\Entity\Family;
+use App\Entity\User;
+use App\Enum\FamilyRole;
+use App\Money\FamilySetup;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
  * Functional tests of the API: a fresh database for each test, and helpers to create a family
@@ -33,18 +38,23 @@ abstract class ApiTestCase extends WebTestCase
         $em->getConnection()->executeStatement('TRUNCATE '.implode(', ', $tables).' RESTART IDENTITY CASCADE');
     }
 
-    /** Creates a family; returns the token of its first parent. */
+    /**
+     * Creates a family with its first parent, as the installation does (the API itself creates
+     * only one family per server); returns the token of the parent.
+     */
     protected function registerFamily(string $username = 'maman', string $familyName = 'Famille Martin'): string
     {
-        $response = $this->api('POST', '/api/register', null, [
-            'familyName' => $familyName,
-            'displayName' => ucfirst($username),
-            'username' => $username,
-            'password' => 'motdepasse',
-        ]);
-        self::assertResponseStatusCodeSame(201);
+        $container = static::getContainer();
+        $em = $container->get(EntityManagerInterface::class);
+        $family = new Family($familyName);
+        $parent = new User($family, $username, ucfirst($username), FamilyRole::Parent);
+        $parent->setPassword($container->get(UserPasswordHasherInterface::class)->hashPassword($parent, 'motdepasse'));
+        $em->persist($family);
+        $em->persist($parent);
+        $container->get(FamilySetup::class)->populate($family);
+        $em->flush();
 
-        return $response['token'];
+        return $this->login($username, 'motdepasse');
     }
 
     /** Adds a child to the parent's family; returns [child id, child token]. */

@@ -10,9 +10,12 @@ les enfants gèrent leur argent de poche et font leurs demandes aux parents.
 
 ## Fonctionnement
 
-- **Création** (`/inscription`) : un parent crée l’espace de sa famille et en devient le premier membre. La
-  famille reçoit un *Compte courant* et des catégories prêtes à l’emploi (`App\Money\FamilySetup`). Le
-  parent ajoute ensuite l’autre parent et les enfants (*Famille*).
+- **Installation** (`/installation`, à la première visite) : une instance = une famille. La page demande d’abord
+  le **code d’installation** affiché sur le serveur (journaux du conteneur, ou `bin/console app:setup:code`),
+  pour que seul l’administrateur du serveur installe, pas le premier venu ; puis elle crée la famille et son
+  premier parent (`App\Controller\SetupController`, une seule fois, essais du code limités). La famille reçoit
+  un *Compte courant* et des catégories prêtes à l’emploi (`App\Money\FamilySetup`). Il n’y a pas
+  d’inscription libre : un parent ajoute l’autre parent et les enfants (*Famille*).
 - **Deux profils** (`App\Enum\FamilyRole`) :
   - **Parent** : accès à tout. Mot de passe de 8 caractères au moins.
   - **Enfant** : seulement *sa* tirelire et *ses* demandes. Il se connecte avec un code de 4 à 12 chiffres ;
@@ -109,18 +112,29 @@ npm run start:code-server                 # derrière code-server : /absproxy/44
 Ici, Docker tourne sur l’hôte `docker` : `backend/.env.local` et `backend/.env.test.local` pointent
 `DATABASE_URL` sur `docker:5434`.
 
-Hors Docker, lancer au moins chaque jour : `php bin/console app:schedules:run` (cron). L’image Docker a son
-service `scheduler`, qui le fait toutes les heures.
+Hors Docker, lancer au moins chaque jour : `php bin/console app:schedules:run` (cron). Dans l’image Docker, le
+planificateur tourne toutes les heures.
 
 ## Installation (Docker)
 
-Image `iemperor/tribubudget` : l’application et l’API servies par FrankenPHP, plus un service `scheduler` pour
-les échéances. Fichiers prêts à l’emploi : [`docker/compose.yaml`](docker/compose.yaml) et
-[`docker/.env.example`](docker/.env.example) ; guide complet : [`docker/DOCKERHUB.md`](docker/DOCKERHUB.md)
-(page Docker Hub).
+Image tout-en-un `iemperor/tribubudget` : l’application et l’API (FrankenPHP), PostgreSQL 16 et le planificateur
+des échéances, sans aucun réglage :
 
 ```bash
-docker build --pull -t iemperor/tribubudget:0.1.0 --build-arg APP_VERSION=0.1.0 .
+docker run -d --name tribubudget -p 8080:80 -v tribubudget:/data iemperor/tribubudget
+docker logs tribubudget          # code d’installation, demandé sur http://<serveur>:8080
+```
+
+Au premier lancement, [`docker/entrypoint.sh`](docker/entrypoint.sh) crée dans le volume `/data` les secrets
+(`/data/secrets` : `APP_SECRET`, `JWT_PASSPHRASE`, mot de passe de la base), la base (`/data/postgres`, écoutant
+seulement en interne), les clés JWT et le code d’installation ; les variables d’environnement, si elles sont
+données, priment. Avec `DATABASE_URL`, l’image utilise cette base au lieu de la sienne (installations 0.1.0).
+Les processus tournent sous leur propre utilisateur (`postgres`, `www-data`), sous `tini` ; à l’arrêt, PostgreSQL
+s’arrête proprement. Commandes : `docker exec tribubudget console …`. Fichiers : [`docker/compose.yaml`](docker/compose.yaml),
+guide complet : [`docker/DOCKERHUB.md`](docker/DOCKERHUB.md) (page Docker Hub).
+
+```bash
+docker build --pull -t iemperor/tribubudget:X.Y.Z --build-arg APP_VERSION=X.Y.Z .
 ```
 
 ## Publier une version
