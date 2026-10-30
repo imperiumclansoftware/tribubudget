@@ -16,8 +16,7 @@ français :
 - **Tableau de bord** : solde, mois en cours, reste prévu fin du mois, six derniers mois, projets réalisables, prochaines échéances
 - Interface pensée pour le téléphone, jusqu’à l’écran large ; thème clair ou sombre selon le système
 
-L’image contient **tout** : l’interface Angular et l’API Symfony servies par [FrankenPHP](https://frankenphp.dev)
-sur le port 80, leur base **PostgreSQL 16** et le planificateur des échéances. Aucun réglage : les secrets et la
+L’image contient **tout** : l’interface Angular et l’API Symfony servies par nginx et PHP-FPM sur le port 80, leur base **PostgreSQL 16** et le planificateur des échéances. Aucun réglage : les secrets et la
 base sont créés au premier lancement.
 
 - Code source : https://github.com/imperiumclansoftware/tribubudget
@@ -28,6 +27,7 @@ base sont créés au premier lancement.
 | Tag | Contenu |
 |---|---|
 | `latest` | Dernière version publiée |
+| `0.4.0` | Serveur web nginx + PHP-FPM au lieu de FrankenPHP : aucune CVE connue dans l’image |
 | `0.3.1` | Correctifs de sécurité d’Alpine (`curl` 8.23.0) |
 | `0.3.0` | Profil ado avec ses propres comptes et demandes de remboursement, pointage des opérations, reste prévu fin du mois |
 | `0.2.0` | Image tout-en-un (base intégrée, secrets créés au premier lancement), page d’installation avec code |

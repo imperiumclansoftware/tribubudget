@@ -145,7 +145,7 @@ planificateur tourne toutes les heures.
 
 ## Installation (Docker)
 
-Image tout-en-un `iemperor/tribubudget` : l’application et l’API (FrankenPHP), PostgreSQL 16 et le planificateur
+Image tout-en-un `iemperor/tribubudget` : l’application et l’API (nginx et PHP-FPM), PostgreSQL 16 et le planificateur
 des échéances, sans aucun réglage :
 
 ```bash

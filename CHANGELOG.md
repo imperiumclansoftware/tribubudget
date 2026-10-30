@@ -1,5 +1,19 @@
 # Journal des versions
 
+## 0.4.0 — 2026-10-30
+
+**Une image sans CVE connue.**
+
+- Le serveur web passe de FrankenPHP à **nginx et PHP-FPM** (paquets Alpine et image PHP officielle). Le
+  binaire FrankenPHP embarquait des bibliothèques Go signalées par les scanners sans correctif disponible
+  (`go-jose` v3 : une CVE haute, deux moyennes), bien qu’inutilisées ici (HTTPS automatique désactivé).
+  L’image ne contient plus aucun binaire Go : aucune CVE connue, toutes sévérités confondues.
+- Rien ne change pour l’application ni pour les données. Les processus maîtres de nginx et PHP-FPM
+  démarrent en root, leurs workers tournent en `www-data`.
+
+Mise à jour depuis 0.3.x : rien à faire ; les dossiers `caddy` et `caddy-config` du volume `/data` ne
+servent plus et peuvent être supprimés.
+
 ## 0.3.1 — 2026-10-30
 
 **Correctifs de sécurité de l’image.**

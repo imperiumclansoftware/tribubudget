@@ -2,8 +2,8 @@
 # Starts TribuBudget, all in one (run as root by tini):
 #  1. the secrets, created at the first start in /data/secrets unless given as variables;
 #  2. the database: the embedded PostgreSQL (/data/postgres), unless DATABASE_URL is given;
-#  3. migrations, JWT keys and installation code, then the scheduler and the web server, each
-#     under its own user. On stop, the services end and PostgreSQL shuts down cleanly.
+#  3. migrations, JWT keys and installation code, then the scheduler and the web server, the
+#     scheduler and the web workers as www-data. On stop, the services end and PostgreSQL shuts down cleanly.
 # Any other command (e.g. tribubudget-scheduler next to an external database) is run as www-data.
 set -e
 
@@ -11,7 +11,7 @@ DATA=/data
 PGDATA="$DATA/postgres"
 PG_MAJOR=16
 
-mkdir -p "$DATA/secrets" "$DATA/jwt" "$DATA/setup" "$DATA/caddy" "$DATA/caddy-config"
+mkdir -p "$DATA/secrets" "$DATA/jwt" "$DATA/setup"
 chmod 700 "$DATA/secrets"
 
 # A secret: the variable if given, otherwise the one generated at the first start
@@ -54,7 +54,7 @@ umask 027
 } > /app/.env.local
 umask 022
 chown root:www-data /app/.env.local
-chown -R www-data:www-data "$DATA/jwt" "$DATA/setup" "$DATA/caddy" "$DATA/caddy-config"
+chown -R www-data:www-data "$DATA/jwt" "$DATA/setup"
 
 as_app() {
 	su-exec www-data "$@"
@@ -109,7 +109,7 @@ wait_for_database() {
 }
 
 # Another command: run it as the application, against the given database
-if [ "$1" != 'frankenphp' ]; then
+if [ "$1" != 'tribubudget-web' ]; then
 	if $embedded_database; then
 		echo 'TribuBudget : pour une commande, utilisez « docker exec tribubudget console … » dans le conteneur en marche.' >&2
 		exit 1
@@ -129,7 +129,8 @@ as_app php bin/console app:setup:code
 
 as_app tribubudget-scheduler &
 scheduler=$!
-su-exec www-data "$@" &
+# Its master processes stay root, its workers switch to www-data (see tribubudget-web)
+"$@" &
 web=$!
 
 shutdown() {
