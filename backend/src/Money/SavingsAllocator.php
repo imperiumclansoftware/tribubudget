@@ -34,7 +34,7 @@ final class SavingsAllocator
         }
 
         $result = [];
-        foreach ($this->accounts->forFamily($family) as $account) {
+        foreach ($this->accounts->household($family) as $account) {
             if (!$account->isSavings()) {
                 continue;
             }

@@ -7,7 +7,10 @@ use App\Enum\RequestStatus;
 use App\Repository\MoneyRequestRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-/** Request of a child to the parents: an advance on the pocket money, or a purchase. */
+/**
+ * Request of a child or a teenager to the parents: an advance on the pocket money, a purchase, or
+ * (teenagers) the reimbursement of an expense recorded on their account.
+ */
 #[ORM\Entity(repositoryClass: MoneyRequestRepository::class)]
 class MoneyRequest implements FamilyOwned
 {
@@ -40,13 +43,17 @@ class MoneyRequest implements FamilyOwned
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         private User $child,
-        #[ORM\Column(length: 10, enumType: RequestKind::class)]
+        #[ORM\Column(length: 15, enumType: RequestKind::class)]
         private RequestKind $kind,
         /** In cents */
         #[ORM\Column]
         private int $amount,
         #[ORM\Column(length: self::REASON_MAX_LENGTH)]
         private string $reason,
+        /** Reimbursements: the teenager's expense; null once deleted */
+        #[ORM\ManyToOne]
+        #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+        private ?Operation $operation = null,
     ) {
         $this->createdAt = new \DateTimeImmutable();
     }
@@ -81,6 +88,11 @@ class MoneyRequest implements FamilyOwned
         return $this->reason;
     }
 
+    public function getOperation(): ?Operation
+    {
+        return $this->operation;
+    }
+
     public function getStatus(): RequestStatus
     {
         return $this->status;
@@ -89,6 +101,11 @@ class MoneyRequest implements FamilyOwned
     public function isPending(): bool
     {
         return RequestStatus::Pending === $this->status;
+    }
+
+    public function isApproved(): bool
+    {
+        return RequestStatus::Approved === $this->status;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

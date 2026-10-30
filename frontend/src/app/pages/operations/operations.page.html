@@ -9,7 +9,7 @@
         type="button"
         class="btn"
         (click)="openTransfer()"
-        [disabled]="(accounts.value()?.length ?? 0) < 2"
+        [disabled]="accounts().length + teenAccounts().length < 2"
       >
         <app-icon name="transfer" /> Virement
       </button>
@@ -17,7 +17,7 @@
         type="button"
         class="btn btn-primary"
         (click)="openNew()"
-        [disabled]="!accounts.value()?.length"
+        [disabled]="!accounts().length"
       >
         <app-icon name="plus" /> Nouvelle opération
       </button>
@@ -31,7 +31,7 @@
       <span class="visually-hidden">Compte</span>
       <select [ngModel]="accountFilter()" (ngModelChange)="accountFilter.set($event)">
         <option [ngValue]="null">Tous les comptes</option>
-        @for (a of accounts.value(); track a.id) {
+        @for (a of accounts(); track a.id) {
           <option [ngValue]="a.id">{{ a.name }}</option>
         }
       </select>
@@ -48,6 +48,14 @@
   </div>
 
   <div class="summary">
+    @if (filteredAccount(); as account) {
+      <span
+        >Solde <strong class="amount">{{ account.balance | euros }}</strong></span
+      >
+      <span
+        >Pointé <strong class="amount">{{ account.reconciledBalance ?? 0 | euros }}</strong></span
+      >
+    }
     <span
       >Revenus <strong class="amount amount-in">{{ totals().income | euros }}</strong></span
     >
@@ -56,7 +64,7 @@
     >
   </div>
 
-  @if (loadError(); as message) {
+  @if (loadError() ?? actionError(); as message) {
     <p class="error" role="alert">{{ message }}</p>
   }
 
@@ -67,6 +75,11 @@
         <ul class="transaction-list">
           @for (o of day.operations; track o.id) {
             <li class="transaction-item">
+              <app-reconcile-check
+                [operation]="o"
+                (saved)="reconciled($event)"
+                (failed)="actionError.set($event)"
+              />
               @if (o.transfer; as t) {
                 <span class="transfer-icon" aria-hidden="true">
                   <app-icon name="transfer" [size]="16" />
@@ -160,7 +173,7 @@
       <label class="field">
         <span>Compte</span>
         <select formControlName="accountId">
-          @for (a of accounts.value(); track a.id) {
+          @for (a of accounts(); track a.id) {
             <option [ngValue]="a.id">{{ a.name }}</option>
           }
         </select>
@@ -206,17 +219,15 @@
       <label class="field">
         <span>Depuis</span>
         <select formControlName="fromAccountId">
-          @for (a of accounts.value(); track a.id) {
-            <option [ngValue]="a.id">{{ a.name }}</option>
-          }
+          <ng-container *ngTemplateOutlet="transferOptions; context: { disabled: 0 }" />
         </select>
       </label>
       <label class="field">
         <span>Vers</span>
         <select formControlName="toAccountId">
-          @for (a of accounts.value(); track a.id) {
-            <option [ngValue]="a.id" [disabled]="a.id === transferFrom()">{{ a.name }}</option>
-          }
+          <ng-container
+            *ngTemplateOutlet="transferOptions; context: { disabled: transferFrom() }"
+          />
         </select>
       </label>
     </div>
@@ -261,3 +272,19 @@
     </div>
   </form>
 </app-modal>
+
+<!-- The household's accounts, then each teenager's: money given to them is no expense -->
+<ng-template #transferOptions let-disabled="disabled">
+  <optgroup label="Comptes du foyer">
+    @for (a of accounts(); track a.id) {
+      <option [ngValue]="a.id" [disabled]="a.id === disabled">{{ a.name }}</option>
+    }
+  </optgroup>
+  @for (group of teenAccounts(); track group.name) {
+    <optgroup [label]="'Comptes de ' + group.name">
+      @for (a of group.accounts; track a.id) {
+        <option [ngValue]="a.id" [disabled]="a.id === disabled">{{ a.name }}</option>
+      }
+    </optgroup>
+  }
+</ng-template>

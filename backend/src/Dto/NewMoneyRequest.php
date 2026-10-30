@@ -6,10 +6,11 @@ use App\Entity\MoneyRequest;
 use App\Enum\RequestKind;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/** Sent by a child; the messages talk to the child. */
+/** Sent by a child or a teenager; the messages talk to them. Reimbursements: ReimbursementRequest. */
 final readonly class NewMoneyRequest
 {
     public function __construct(
+        #[Assert\Choice(choices: [RequestKind::Advance, RequestKind::Purchase], message: 'Demande une avance ou un achat.')]
         public RequestKind $kind = RequestKind::Advance,
         #[Assert\Range(min: 1, max: Amount::MAX, notInRangeMessage: 'Indique un montant positif.')]
         public int $amount = 0,

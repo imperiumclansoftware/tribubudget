@@ -1,16 +1,19 @@
 <div class="page">
   <header class="page-header">
     <div>
-      <h1>{{ auth.isChild() ? 'Mes demandes' : 'Demandes des enfants' }}</h1>
+      <h1>{{ auth.isParent() ? 'Demandes des enfants' : 'Mes demandes' }}</h1>
       <p class="subtitle">
-        {{
-          auth.isChild()
-            ? 'Demande une avance ou un achat à tes parents'
-            : 'Avances sur l’argent de poche et envies d’achats'
-        }}
+        @if (auth.isParent()) {
+          Avances sur l’argent de poche, envies d’achats et remboursements
+        } @else if (auth.isTeen()) {
+          Demande une avance ou un achat à tes parents. Pour te faire rembourser une dépense,
+          note-la dans <a routerLink="/mes-comptes">tes comptes</a>.
+        } @else {
+          Demande une avance ou un achat à tes parents
+        }
       </p>
     </div>
-    @if (auth.isChild()) {
+    @if (!auth.isParent()) {
       <button type="button" class="btn btn-primary" (click)="openAsk()">
         <app-icon name="plus" /> Nouvelle demande
       </button>
@@ -29,9 +32,7 @@
     <ul class="list">
       @for (r of pending(); track r.id) {
         <li class="request">
-          <span class="kind" aria-hidden="true"
-            ><app-icon [name]="r.kind === 'advance' ? 'inbox' : 'cart'"
-          /></span>
+          <span class="kind" aria-hidden="true"><app-icon [name]="kindIcons[r.kind]" /></span>
           <div class="grow">
             <strong class="block">
               @if (auth.isParent()) {
@@ -68,9 +69,7 @@
       <ul class="list">
         @for (r of answered(); track r.id) {
           <li class="request">
-            <span class="kind" aria-hidden="true"
-              ><app-icon [name]="r.kind === 'advance' ? 'inbox' : 'cart'"
-            /></span>
+            <span class="kind" aria-hidden="true"><app-icon [name]="kindIcons[r.kind]" /></span>
             <div class="grow">
               <strong class="block">
                 @if (auth.isParent()) {
@@ -112,8 +111,8 @@
     </div>
     <p class="muted">
       @if (askForm.controls.kind.value === 'advance') {
-        L’argent arrive dans ta tirelire tout de suite, et il est repris sur tes prochains
-        versements.
+        L’argent arrive {{ auth.isTeen() ? 'sur ton compte courant' : 'dans ta tirelire' }} tout de
+        suite, et il est repris sur tes prochains versements.
       } @else {
         Tes parents achètent la chose s’ils sont d’accord.
       }
@@ -152,9 +151,45 @@
     <form class="form" [formGroup]="answerForm" (ngSubmit)="answer()">
       <p>
         {{ a.request.child.displayName }} demande
-        {{ a.request.kind === 'advance' ? 'une avance' : 'un achat' }} de
-        <strong>{{ a.request.amount | euros }}</strong> : « {{ a.request.reason }} »
+        @switch (a.request.kind) {
+          @case ('advance') {
+            une avance
+          }
+          @case ('purchase') {
+            un achat
+          }
+          @default {
+            le remboursement d’une dépense
+          }
+        }
+        de <strong>{{ a.request.amount | euros }}</strong> : « {{ a.request.reason }} »
       </p>
+      @if (a.approve && a.request.kind === 'reimbursement') {
+        <div class="form-row">
+          <label class="field">
+            <span>Payé depuis le compte</span>
+            <select formControlName="accountId">
+              <option [ngValue]="0">Aucun (ne pas l’enregistrer dans le budget)</option>
+              @for (account of accounts.value(); track account.id) {
+                <option [ngValue]="account.id">{{ account.name }}</option>
+              }
+            </select>
+          </label>
+          <label class="field">
+            <span>Catégorie de la dépense</span>
+            <select formControlName="categoryId">
+              <option [ngValue]="0">Sans catégorie</option>
+              @for (c of expenseCategories(); track c.id) {
+                <option [ngValue]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        <small class="hint muted"
+          >{{ a.request.child.displayName }} est remboursé tout de suite sur le compte de la dépense
+          ; le foyer l’enregistre comme une dépense de sa catégorie.</small
+        >
+      }
       @if (a.approve && a.request.kind === 'advance') {
         <label class="field">
           <span>Pris sur le compte</span>

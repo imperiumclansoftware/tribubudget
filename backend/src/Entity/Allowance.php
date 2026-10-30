@@ -7,7 +7,7 @@ use App\Repository\AllowanceRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-/** Pocket money paid to a child every week or month (see AllowancePayer). */
+/** Pocket money paid to a child or a teenager every week or month (see AllowancePayer). */
 #[ORM\Entity(repositoryClass: AllowanceRepository::class)]
 class Allowance implements FamilyOwned
 {
@@ -94,6 +94,21 @@ class Allowance implements FamilyOwned
     public function isDue(\DateTimeImmutable $today): bool
     {
         return $this->active && $this->nextPaymentOn <= $today;
+    }
+
+    /**
+     * Payment dates still to come before $end (excluded), from the next one; none while inactive.
+     *
+     * @return list<\DateTimeImmutable>
+     */
+    public function datesBefore(\DateTimeImmutable $end): array
+    {
+        $dates = [];
+        for ($date = $this->nextPaymentOn; $this->active && $date < $end; $date = $this->frequency->next($date, $this->dayOfMonth)) {
+            $dates[] = $date;
+        }
+
+        return $dates;
     }
 
     /** Moves on to the next payment date, once the current one is paid. */

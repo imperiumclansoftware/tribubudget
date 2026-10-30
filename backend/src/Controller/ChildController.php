@@ -8,10 +8,10 @@ use App\Dto\AdjustmentRequest;
 use App\Dto\AllowanceRequest;
 use App\Dto\ExpenseRequest;
 use App\Dto\Text;
-use App\Entity\Allowance;
 use App\Entity\PocketMoneyEntry;
 use App\Entity\User;
 use App\Enum\PocketMoneyKind;
+use App\Money\Allowances;
 use App\Money\PocketMoney;
 use App\Money\Schedules;
 use App\Repository\AllowanceRepository;
@@ -90,30 +90,18 @@ final class ChildController extends AbstractController
 
     #[Route('/children/{id}/allowance', name: 'api_child_allowance', requirements: ['id' => Requirement::DIGITS], methods: ['PUT'])]
     #[IsGranted(ChildVoter::MANAGE, subject: 'child', message: 'Seuls les parents fixent l’argent de poche.')]
-    public function setAllowance(User $child, #[CurrentUser] User $me, #[MapRequestPayload] AllowanceRequest $payload, FamilyLookup $lookup): JsonResponse
+    public function setAllowance(User $child, #[CurrentUser] User $me, #[MapRequestPayload] AllowanceRequest $payload, FamilyLookup $lookup, Allowances $allowances): JsonResponse
     {
-        $account = $lookup->account($payload->accountId, $me);
-        $nextPaymentOn = new \DateTimeImmutable($payload->nextPaymentOn);
-        $allowance = $this->allowances->forChild($child);
-        if (null === $allowance) {
-            $this->em->persist(new Allowance($child, $payload->amount, $payload->frequency, $nextPaymentOn, $account, $payload->active));
-        } else {
-            $allowance->edit($payload->amount, $payload->frequency, $nextPaymentOn, $account, $payload->active);
-        }
-        $this->em->flush();
+        $allowances->set($child, $payload, $lookup->householdAccount($payload->accountId, $me));
 
         return $this->json($this->presented($child, $me));
     }
 
     #[Route('/children/{id}/allowance', name: 'api_child_allowance_delete', requirements: ['id' => Requirement::DIGITS], methods: ['DELETE'])]
     #[IsGranted(ChildVoter::MANAGE, subject: 'child', message: 'Seuls les parents fixent l’argent de poche.')]
-    public function removeAllowance(User $child, #[CurrentUser] User $me): JsonResponse
+    public function removeAllowance(User $child, #[CurrentUser] User $me, Allowances $allowances): JsonResponse
     {
-        $allowance = $this->allowances->forChild($child);
-        if (null !== $allowance) {
-            $this->em->remove($allowance);
-            $this->em->flush();
-        }
+        $allowances->remove($child);
 
         return $this->json($this->presented($child, $me));
     }

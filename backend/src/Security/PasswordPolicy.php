@@ -5,7 +5,10 @@ namespace App\Security;
 use App\Enum\FamilyRole;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
-/** Parents protect the whole budget with a password; children sign in with a PIN of 4 or more digits. */
+/**
+ * Parents protect the whole budget, and teenagers their accounts, with a password; children sign
+ * in with a PIN of 4 or more digits.
+ */
 final class PasswordPolicy
 {
     public const MAX_LENGTH = 4096;
@@ -15,8 +18,8 @@ final class PasswordPolicy
         if (FamilyRole::Child === $role && !preg_match('/^\d{4,12}$/', $password)) {
             throw new UnprocessableEntityHttpException('Le code d’un enfant compte de 4 à 12 chiffres.');
         }
-        if (FamilyRole::Parent === $role && mb_strlen($password) < $role->minPasswordLength()) {
-            throw new UnprocessableEntityHttpException(\sprintf('Le mot de passe d’un parent compte au moins %d caractères.', $role->minPasswordLength()));
+        if (FamilyRole::Child !== $role && mb_strlen($password) < $role->minPasswordLength()) {
+            throw new UnprocessableEntityHttpException(\sprintf('Le mot de passe d’un %s compte au moins %d caractères.', FamilyRole::Teen === $role ? 'adolescent' : 'parent', $role->minPasswordLength()));
         }
         if (\strlen($password) > self::MAX_LENGTH) {
             throw new UnprocessableEntityHttpException('Ce mot de passe est trop long.');

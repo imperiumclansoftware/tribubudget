@@ -143,3 +143,35 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* What should be left at the end of the month, and how it adds up */
+.forecast-total {
+  margin: 4px 0 12px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--success-text);
+
+  &.negative {
+    color: var(--danger-text);
+  }
+}
+
+.forecast-lines {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  dt {
+    color: var(--text-secondary);
+  }
+  dd {
+    margin: 0;
+    white-space: nowrap;
+  }
+}

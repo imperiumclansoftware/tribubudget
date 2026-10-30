@@ -30,6 +30,13 @@ export class Shell {
 
   protected readonly nav = computed<NavItem[]>(() => {
     const user = this.auth.user();
+    if (user?.role === 'teen') {
+      return [
+        { path: '/mes-comptes', label: 'Mes comptes', short: 'Comptes', icon: 'wallet' },
+        { path: '/demandes', label: 'Mes demandes', short: 'Demandes', icon: 'inbox' },
+        { path: '/mon-compte', label: 'Mon compte', icon: 'key' },
+      ];
+    }
     if (user?.role !== 'parent') {
       return [
         { path: '/ma-tirelire', label: 'Ma tirelire', icon: 'piggy' },

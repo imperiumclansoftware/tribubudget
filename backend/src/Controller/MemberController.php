@@ -7,7 +7,11 @@ use App\Dto\MemberRequest;
 use App\Dto\PasswordRequest;
 use App\Dto\RenameRequest;
 use App\Dto\Text;
+use App\Entity\Account;
 use App\Entity\User;
+use App\Money\TeenMoney;
+use App\Repository\AccountRepository;
+use App\Repository\OperationRepository;
 use App\Repository\UserRepository;
 use App\Security\PasswordPolicy;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,7 +26,7 @@ use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-/** The parents manage the members of the family: other parents and the children. */
+/** The parents manage the members of the family: other parents, the teenagers and the children. */
 #[Route('/api/members', format: 'json')]
 #[IsGranted('ROLE_PARENT', message: 'Seuls les parents gèrent les membres de la famille.')]
 final class MemberController extends AbstractController
@@ -43,7 +47,8 @@ final class MemberController extends AbstractController
     }
 
     #[Route('', name: 'api_members_create', methods: ['POST'])]
-    public function create(#[CurrentUser] User $me, #[MapRequestPayload] MemberRequest $payload, UserRepository $users): JsonResponse
+    /** A teenager starts with a current account and a savings account of their own. */
+    public function create(#[CurrentUser] User $me, #[MapRequestPayload] MemberRequest $payload, UserRepository $users, TeenMoney $teenMoney): JsonResponse
     {
         PasswordPolicy::check($payload->role, $payload->password);
         if ($users->isUsernameTaken($payload->username)) {
@@ -53,6 +58,9 @@ final class MemberController extends AbstractController
         $member = new User($me->getFamily(), $payload->username, Text::clean($payload->displayName), $payload->role);
         $member->setPassword($this->hasher->hashPassword($member, $payload->password));
         $this->em->persist($member);
+        if ($member->isTeen()) {
+            $teenMoney->openAccounts($member);
+        }
         $this->em->flush();
 
         return $this->json($this->presenter->user($member), Response::HTTP_CREATED);
@@ -80,13 +88,25 @@ final class MemberController extends AbstractController
         return new Response(status: Response::HTTP_NO_CONTENT);
     }
 
-    /** Removes the member and their pocket money; the family always keeps the parent doing it. */
+    /**
+     * Removes the member and their pocket money; the family always keeps the parent doing it. A
+     * teenager's empty accounts go with them; the others, and their history, return to the
+     * household, named after them.
+     */
     #[Route('/{id}', name: 'api_members_delete', requirements: ['id' => Requirement::DIGITS], methods: ['DELETE'])]
-    public function delete(User $member, #[CurrentUser] User $me): Response
+    public function delete(User $member, #[CurrentUser] User $me, AccountRepository $accounts, OperationRepository $operations): Response
     {
         $this->sameFamily($member, $me);
         if ($member === $me) {
             throw new UnprocessableEntityHttpException('Vous ne pouvez pas supprimer votre propre compte.');
+        }
+        foreach ($accounts->ownedBy($member) as $account) {
+            if (0 === $operations->countForAccount($account) && 0 === $account->getInitialBalance()) {
+                $this->em->remove($account);
+            } else {
+                $account->setOwner(null);
+                $account->rename(mb_substr($account->getName().' ('.$member->getDisplayName().')', 0, Account::NAME_MAX_LENGTH));
+            }
         }
         $this->em->remove($member);
         $this->em->flush();

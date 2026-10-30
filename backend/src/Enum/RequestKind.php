@@ -8,4 +8,6 @@ enum RequestKind: string
     case Advance = 'advance';
     /** Something the child would like the parents to buy */
     case Purchase = 'purchase';
+    /** A teenager paid an expense for the family and asks the parents to pay them back */
+    case Reimbursement = 'reimbursement';
 }

@@ -37,6 +37,8 @@ const ICONS = {
   down: 'M6 9l6 6 6-6',
   transfer: 'M17 3l4 4-4 4 M3 7h18 M7 21l-4-4 4-4 M21 17H3',
   repeat: 'M17 1l4 4-4 4 M3 11V9a4 4 0 0 1 4-4h14 M7 23l-4-4 4-4 M21 13v2a4 4 0 0 1-4 4H3',
+  receipt:
+    'M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8 M12 17.5v-11',
 } as const;
 
 export type IconName = keyof typeof ICONS;

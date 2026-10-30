@@ -1,12 +1,12 @@
 /** Shapes of the API responses. Amounts are in cents. */
 
-export type FamilyRole = 'parent' | 'child';
+export type FamilyRole = 'parent' | 'teen' | 'child';
 export type AccountType = 'checking' | 'savings' | 'cash';
 export type CategoryKind = 'expense' | 'income';
 export type Frequency = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 export type AllowanceFrequency = Extract<Frequency, 'weekly' | 'monthly'>;
 export type PocketMoneyKind = 'allowance' | 'expense' | 'advance' | 'repayment' | 'adjustment';
-export type RequestKind = 'advance' | 'purchase';
+export type RequestKind = 'advance' | 'purchase' | 'reimbursement';
 export type RequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 
 export interface Member {
@@ -18,7 +18,7 @@ export interface Member {
 
 export interface Me extends Member {
   family: { id: number; name: string };
-  /** For a parent: requests of the children waiting for an answer */
+  /** For a parent: requests of the children and teenagers waiting for an answer */
   pendingRequests: number;
 }
 
@@ -34,6 +34,10 @@ export interface Account {
   /** Savings accounts: amount kept aside, not allocated to the projects */
   minimumBalance: number | null;
   balance: number;
+  /** Initial balance plus the operations ticked off, to compare with the bank statement */
+  reconciledBalance?: number;
+  /** The teenager holding the account; null for the household's */
+  owner: { id: number; displayName: string } | null;
 }
 
 export interface SavingsProject {
@@ -82,8 +86,14 @@ export interface Operation {
   createdBy: string | null;
   /** Set when recorded by a recurring operation */
   recurringId: number | null;
+  /** Ticked off against the bank statement */
+  reconciled: boolean;
   /** Set on the two operations of a transfer; the counterpart is the other account */
   transfer: { id: number; counterpartAccountId: number } | null;
+  /** Latest request of a teenager to be paid back for this expense */
+  reimbursement: { id: number; status: RequestStatus } | null;
+  /** Whether the viewer may change it (or its transfer) */
+  editable: boolean;
 }
 
 export interface Transfer {
@@ -124,6 +134,15 @@ export interface Child extends Member {
   allowance: Allowance | null;
 }
 
+/** A teenager and their accounts, outside the household budget */
+export interface Teen extends Member {
+  /** Sum of their accounts */
+  balance: number;
+  advanceOwed: number;
+  allowance: Allowance | null;
+  accounts: Account[];
+}
+
 export interface PocketMoneyEntry {
   id: number;
   kind: PocketMoneyKind;
@@ -144,6 +163,8 @@ export interface MoneyRequest {
   kind: RequestKind;
   amount: number;
   reason: string;
+  /** Reimbursements: the teenager's expense */
+  operationId: number | null;
   status: RequestStatus;
   createdAt: string;
   decidedBy: string | null;
@@ -161,6 +182,8 @@ export interface Dashboard {
   uncategorized: number;
   history: { month: string; income: number; expenses: number }[];
   children: { id: number; displayName: string; balance: number }[];
+  /** What each teenager holds on their accounts */
+  teens: { id: number; displayName: string; balance: number }[];
   /** Projects that can be carried out now */
   fundableProjects: { id: number; name: string; target: number; accountName: string }[];
   /** Recurring operations falling within 30 days */
@@ -173,6 +196,20 @@ export interface Dashboard {
   }[];
   activeAllowances: number;
   pendingRequests: number;
+  /** What should be left at the end of the current month (null for another month); expenses positive */
+  forecast: {
+    /** Already received, plus the recurring income still to come */
+    income: number;
+    /** Recurring expenses outside the budgeted categories */
+    recurring: number;
+    /** Budgeted categories: their budget, or what was spent when more */
+    budgets: number;
+    /** Allowances still to pay, and what was given already */
+    pocketMoney: number;
+    /** One-off expenses outside the budgets */
+    other: number;
+    remaining: number;
+  } | null;
 }
 
 export interface ApiProblem {

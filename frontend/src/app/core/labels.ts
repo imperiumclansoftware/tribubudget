@@ -24,6 +24,7 @@ export const POCKET_MONEY_KIND_LABELS: Record<PocketMoneyKind, string> = {
 export const REQUEST_KIND_LABELS: Record<RequestKind, string> = {
   advance: 'Avance',
   purchase: 'Achat',
+  reimbursement: 'Remboursement',
 };
 
 export const REQUEST_STATUS_LABELS: Record<RequestStatus, string> = {

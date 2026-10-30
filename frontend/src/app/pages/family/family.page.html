@@ -12,13 +12,57 @@
   @if (bienvenue()) {
     <div class="notice welcome">
       <strong>Bienvenue !</strong> Votre famille est créée, avec un compte courant et des catégories
-      prêtes à l’emploi. Ajoutez maintenant l’autre parent et les enfants : chaque enfant se
-      connecte avec son identifiant et un code à 4 chiffres.
+      prêtes à l’emploi. Ajoutez maintenant l’autre parent, les ados et les enfants : chaque enfant
+      se connecte avec son identifiant et un code à 4 chiffres, chaque ado avec un mot de passe.
     </div>
   }
 
   @if (error() && !adding() && !editing()) {
     <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  @if (teens.value()?.length) {
+    <section>
+      <h2 class="section-title">Adolescents</h2>
+      <div class="children">
+        @for (teen of teens.value(); track teen.id) {
+          <article class="card child">
+            <div class="child-head">
+              <span class="avatar" aria-hidden="true">{{ teen.displayName.charAt(0) }}</span>
+              <div class="grow">
+                <h3 class="ellipsis">{{ teen.displayName }}</h3>
+                <span class="muted">{{ teen.username }}</span>
+              </div>
+              <button
+                type="button"
+                class="btn btn-icon"
+                (click)="openEdit(teen)"
+                [attr.aria-label]="'Modifier ' + teen.displayName"
+              >
+                <app-icon name="edit" [size]="18" />
+              </button>
+            </div>
+            <p class="balance">{{ teen.balance | euros }}</p>
+            <p class="muted">
+              {{ teen.accounts.length }} compte{{ teen.accounts.length > 1 ? 's' : '' }} ·
+              @if (teen.allowance?.active) {
+                {{ teen.allowance!.amount | euros }} {{ frequencies[teen.allowance!.frequency] }}
+              } @else {
+                pas d’argent de poche automatique
+              }
+            </p>
+            @if (teen.advanceOwed > 0) {
+              <span class="badge badge-warning"
+                >Avance à rembourser : {{ teen.advanceOwed | euros }}</span
+              >
+            }
+            <a class="btn btn-small" [routerLink]="['/famille/ado', teen.id]">
+              <app-icon name="wallet" [size]="16" /> Voir les comptes
+            </a>
+          </article>
+        }
+      </div>
+    </section>
   }
 
   <section>
@@ -91,7 +135,9 @@
       }
     </ul>
     <p class="muted rights">
-      Les parents voient et gèrent tout. Les enfants ne voient que leur tirelire : ils notent leurs
+      Les parents voient et gèrent tout. Les ados ont leurs propres comptes (courant, épargne), en
+      dehors du budget du foyer : ils y notent leurs opérations, que vous voyez, et demandent le
+      remboursement d’une dépense. Les enfants ne voient que leur tirelire : ils notent leurs
       dépenses et font des demandes (avance, achat) que vous acceptez ou refusez.
     </p>
   </section>
@@ -105,6 +151,7 @@
   <form class="form" [formGroup]="addForm" (ngSubmit)="add()">
     <div class="segmented" role="radiogroup" aria-label="Rôle">
       <label><input type="radio" formControlName="role" value="child" />Enfant</label>
+      <label><input type="radio" formControlName="role" value="teen" />Ado</label>
       <label><input type="radio" formControlName="role" value="parent" />Parent</label>
     </div>
     <label class="field">

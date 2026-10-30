@@ -19,6 +19,8 @@ final readonly class AccountRequest
         /** Savings accounts: amount not allocated to the projects, in cents; null for none */
         #[Assert\Range(min: 0, max: Amount::MAX, notInRangeMessage: 'Le plancher doit être positif.')]
         public ?int $minimumBalance = null,
+        /** The teenager holding the account; null for an account of the household */
+        public ?int $ownerId = null,
     ) {
     }
 }

@@ -15,6 +15,7 @@ final class AllowancePayer
     public function __construct(
         private readonly AllowanceRepository $allowances,
         private readonly PocketMoney $pocketMoney,
+        private readonly TeenMoney $teenMoney,
         private readonly EntityManagerInterface $em,
     ) {
     }
@@ -27,7 +28,12 @@ final class AllowancePayer
             // Reload: another process may have paid it before Schedules acquired the lock
             $this->em->refresh($allowance);
             for ($i = 0; $allowance->isDue($today) && $i < self::MAX_CATCH_UP; ++$i) {
-                $this->pocketMoney->payAllowance($allowance->getChild(), $allowance->getAmount(), $allowance->getNextPaymentOn(), $allowance->getAccount());
+                $member = $allowance->getChild();
+                if ($member->isTeen()) {
+                    $this->teenMoney->payAllowance($member, $allowance->getAmount(), $allowance->getNextPaymentOn(), $allowance->getAccount());
+                } else {
+                    $this->pocketMoney->payAllowance($member, $allowance->getAmount(), $allowance->getNextPaymentOn(), $allowance->getAccount());
+                }
                 $allowance->advance();
                 ++$paid;
             }

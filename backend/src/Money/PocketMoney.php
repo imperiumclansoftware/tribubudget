@@ -79,12 +79,16 @@ final class PocketMoney
         return $entry;
     }
 
-    private function takeFromHousehold(?Account $account, int $amount, string $label, \DateTimeImmutable $date, ?User $by = null): void
+    /**
+     * Records money given by the parents as an expense of a household account: in the pocket money
+     * category unless another one is given. Nothing without an account.
+     */
+    public function takeFromHousehold(?Account $account, int $amount, string $label, \DateTimeImmutable $date, ?User $by = null, ?Category $category = null): void
     {
-        if (null === $account) {
+        if (null === $account || $amount <= 0) {
             return;
         }
-        $this->em->persist(new Operation($account, $this->pocketMoneyCategory($account), -$amount, mb_substr($label, 0, Operation::LABEL_MAX_LENGTH), $date, $by));
+        $this->em->persist(new Operation($account, $category ?? $this->pocketMoneyCategory($account), -$amount, mb_substr($label, 0, Operation::LABEL_MAX_LENGTH), $date, $by));
     }
 
     /** Recreated if the parents deleted it */

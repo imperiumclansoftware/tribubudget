@@ -8,6 +8,7 @@ use App\Entity\RecurringOperation;
 use App\Entity\User;
 use App\Enum\CategoryKind;
 use App\Money\Month;
+use App\Money\MonthForecast;
 use App\Money\SavingsAllocator;
 use App\Money\Schedules;
 use App\Money\Today;
@@ -26,7 +27,10 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-/** Overview of a month for the parents: balances, spending against the budgets, trend. */
+/**
+ * Overview of a month for the parents: balances, spending against the budgets, trend. The
+ * teenagers' accounts stay outside these figures.
+ */
 #[Route('/api', format: 'json')]
 #[IsGranted('ROLE_PARENT', message: 'Seuls les parents ont accès au tableau de bord.')]
 final class DashboardController extends AbstractController
@@ -53,6 +57,7 @@ final class DashboardController extends AbstractController
         MoneyRequestRepository $requests,
         RecurringOperationRepository $recurring,
         SavingsAllocator $savings,
+        MonthForecast $forecast,
         #[MapQueryParameter(filter: \FILTER_VALIDATE_REGEXP, options: ['regexp' => '/^'.Month::PATTERN.'$/'])] ?string $month = null,
     ): JsonResponse {
         $family = $me->getFamily();
@@ -60,6 +65,7 @@ final class DashboardController extends AbstractController
         $period = null === $month ? Month::of($today->date()) : Month::parse($month);
 
         $balances = $accounts->balances($family);
+        $household = $accounts->household($family);
         $spent = $this->operations->spentByCategory($family, $period->start, $period->end());
         $expenseCategories = array_filter($categories->forFamily($family), static fn (Category $c) => CategoryKind::Expense === $c->getKind());
         $childBalances = $pocketMoney->balances($family);
@@ -78,8 +84,8 @@ final class DashboardController extends AbstractController
                 'name' => $a->getName(),
                 'type' => $a->getType()->value,
                 'balance' => $balances[$a->getId()] ?? $a->getInitialBalance(),
-            ], $accounts->forFamily($family)),
-            'totalBalance' => array_sum($balances),
+            ], $household),
+            'totalBalance' => array_sum(array_map(static fn (Account $a) => $balances[$a->getId()] ?? $a->getInitialBalance(), $household)),
             // Every expense category with a budget or some spending, the biggest first
             'categories' => array_map(static fn (Category $c) => [
                 'id' => $c->getId(),
@@ -98,6 +104,12 @@ final class DashboardController extends AbstractController
                 'displayName' => $child->getDisplayName(),
                 'balance' => $childBalances[$child->getId()] ?? 0,
             ], $users->children($family)),
+            // Outside the household budget: what each teenager holds on their accounts
+            'teens' => array_map(static fn (User $teen) => [
+                'id' => $teen->getId(),
+                'displayName' => $teen->getDisplayName(),
+                'balance' => array_sum(array_map(static fn (Account $a) => $balances[$a->getId()] ?? $a->getInitialBalance(), $accounts->ownedBy($teen))),
+            ], $users->teens($family)),
             'upcoming' => array_map(static fn (RecurringOperation $r) => [
                 'id' => $r->getId(),
                 'label' => $r->getLabel(),
@@ -114,6 +126,8 @@ final class DashboardController extends AbstractController
             ], array_values(array_filter($allocation['projects'], static fn (array $a) => $a['fundable']))), $savings->allocate($family))),
             'activeAllowances' => \count(array_filter($allowances->forFamily($family), static fn ($a) => $a->isActive())),
             'pendingRequests' => $requests->countPending($family),
+            // What should be left at the end of the current month; null for the other months
+            'forecast' => $period->key() === Month::of($today->date())->key() ? $forecast->forecast($family, $period) : null,
         ]);
     }
 

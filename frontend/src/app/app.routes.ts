@@ -7,6 +7,7 @@ import {
   installedGuard,
   parentGuard,
   setupGuard,
+  teenGuard,
 } from './core/auth/auth.guards';
 import { AuthService } from './core/auth/auth.service';
 
@@ -28,11 +29,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./pages/shell/shell').then((m) => m.Shell),
     children: [
-      // Home: the dashboard for a parent, the piggy bank for a child
+      // Home: the dashboard for a parent, their accounts for a teenager, the piggy bank for a child
       {
         path: '',
         pathMatch: 'full',
-        redirectTo: () => (inject(AuthService).isParent() ? 'tableau-de-bord' : 'ma-tirelire'),
+        redirectTo: () => inject(AuthService).home().slice(1),
       },
       // Parents
       {
@@ -75,6 +76,13 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/family/family.page').then((m) => m.FamilyPage),
       },
       {
+        path: 'famille/ado/:teenId',
+        canActivate: [parentGuard],
+        title: 'Comptes d’un adolescent · TribuBudget',
+        loadComponent: () =>
+          import('./pages/teen-accounts/teen-accounts.page').then((m) => m.TeenAccountsPage),
+      },
+      {
         path: 'famille/:childId',
         canActivate: [parentGuard],
         title: 'Tirelire d’un enfant · TribuBudget',
@@ -94,6 +102,14 @@ export const routes: Routes = [
         title: 'Ma tirelire · TribuBudget',
         loadComponent: () =>
           import('./pages/pocket-money/pocket-money.page').then((m) => m.PocketMoneyPage),
+      },
+      // Teenagers
+      {
+        path: 'mes-comptes',
+        canActivate: [teenGuard],
+        title: 'Mes comptes · TribuBudget',
+        loadComponent: () =>
+          import('./pages/teen-accounts/teen-accounts.page').then((m) => m.TeenAccountsPage),
       },
       // Everyone
       {

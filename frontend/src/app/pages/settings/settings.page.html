@@ -2,7 +2,7 @@
   <header class="page-header">
     <div>
       <h1>Comptes et catégories</h1>
-      <p class="subtitle">Les comptes du foyer et le classement des opérations</p>
+      <p class="subtitle">Les comptes du foyer, ceux des ados, et le classement des opérations</p>
     </div>
   </header>
 
@@ -10,44 +10,54 @@
     <p class="error" role="alert">{{ error() }}</p>
   }
 
-  <section class="card">
-    <div class="card-header">
-      <h2>Comptes</h2>
-      <div class="actions">
-        @if ((accounts.value()?.length ?? 0) > 1) {
-          <a class="btn btn-small" routerLink="/operations" [queryParams]="{ virement: 1 }">
-            <app-icon name="transfer" [size]="16" /> Virement
-          </a>
-        }
-        <button type="button" class="btn btn-small" (click)="openAccount('new')">
-          <app-icon name="plus" [size]="16" /> Compte
-        </button>
-      </div>
-    </div>
-    <ul class="list">
-      @for (a of accounts.value(); track a.id) {
-        <li>
-          <app-icon name="wallet" />
-          <div class="grow">
-            <strong class="ellipsis">{{ a.name }}</strong>
-            <span class="muted"> · {{ accountTypes[a.type] }}</span>
-            @if (a.minimumBalance) {
-              <span class="muted"> · plancher {{ a.minimumBalance | euros }}</span>
-            }
-          </div>
-          <span class="amount" [class.amount-in]="a.balance > 0">{{ a.balance | euros }}</span>
-          <button
-            type="button"
-            class="btn btn-icon"
-            (click)="openAccount(a)"
-            [attr.aria-label]="'Modifier ' + a.name"
-          >
-            <app-icon name="edit" [size]="18" />
+  @for (group of accountGroups(); track group.ownerId) {
+    <section class="card">
+      <div class="card-header">
+        <h2>{{ group.title }}</h2>
+        <div class="actions">
+          @if (!group.ownerId && (accounts.value()?.length ?? 0) > 1) {
+            <a class="btn btn-small" routerLink="/operations" [queryParams]="{ virement: 1 }">
+              <app-icon name="transfer" [size]="16" /> Virement
+            </a>
+          }
+          @if (group.ownerId) {
+            <a class="btn btn-small" [routerLink]="['/famille/ado', group.ownerId]">
+              <app-icon name="list" [size]="16" /> Opérations
+            </a>
+          }
+          <button type="button" class="btn btn-small" (click)="openAccount('new', group.ownerId)">
+            <app-icon name="plus" [size]="16" /> Compte
           </button>
-        </li>
-      }
-    </ul>
-  </section>
+        </div>
+      </div>
+      <ul class="list">
+        @for (a of group.items; track a.id) {
+          <li>
+            <app-icon name="wallet" />
+            <div class="grow">
+              <strong class="ellipsis">{{ a.name }}</strong>
+              <span class="muted"> · {{ accountTypes[a.type] }}</span>
+              @if (a.minimumBalance) {
+                <span class="muted"> · plancher {{ a.minimumBalance | euros }}</span>
+              }
+              <span class="muted"> · pointé {{ a.reconciledBalance ?? 0 | euros }}</span>
+            </div>
+            <span class="amount" [class.amount-in]="a.balance > 0">{{ a.balance | euros }}</span>
+            <button
+              type="button"
+              class="btn btn-icon"
+              (click)="openAccount(a)"
+              [attr.aria-label]="'Modifier ' + a.name"
+            >
+              <app-icon name="edit" [size]="18" />
+            </button>
+          </li>
+        } @empty {
+          <li class="empty">Aucun compte.</li>
+        }
+      </ul>
+    </section>
+  }
 
   <div class="grid-2">
     @for (group of categoryGroups(); track group.kind) {
@@ -107,7 +117,21 @@
       </label>
     </div>
     <small class="hint muted">Le solde avant la première opération enregistrée ici.</small>
-    @if (accountType() === 'savings') {
+    @if (teens().length) {
+      <label class="field">
+        <span>Titulaire</span>
+        <select formControlName="ownerId">
+          <option [ngValue]="0">Le foyer</option>
+          @for (teen of teens(); track teen.id) {
+            <option [ngValue]="teen.id">{{ teen.displayName }}</option>
+          }
+        </select>
+        <small class="hint"
+          >Le compte d’un ado reste en dehors du budget du foyer ; il le voit et le gère.</small
+        >
+      </label>
+    }
+    @if (accountType() === 'savings' && !accountOwner()) {
       <label class="field">
         <span>Plancher (€)</span>
         <input formControlName="minimumBalance" inputmode="decimal" placeholder="Aucun" />

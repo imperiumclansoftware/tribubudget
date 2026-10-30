@@ -26,6 +26,16 @@ export class AuthService {
   readonly user = this._user.asReadonly();
   readonly isParent = computed(() => this._user()?.role === 'parent');
   readonly isChild = computed(() => this._user()?.role === 'child');
+  readonly isTeen = computed(() => this._user()?.role === 'teen');
+  /** Where the member lands: the dashboard, their accounts or their piggy bank */
+  readonly home = computed(() => {
+    const role = this._user()?.role;
+    return role === 'parent'
+      ? '/tableau-de-bord'
+      : role === 'teen'
+        ? '/mes-comptes'
+        : '/ma-tirelire';
+  });
   private _installed = false;
 
   login(username: string, password: string): Observable<AuthResponse> {

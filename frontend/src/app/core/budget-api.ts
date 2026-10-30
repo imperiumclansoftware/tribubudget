@@ -16,6 +16,7 @@ import {
   PocketMoney,
   RecurringOperation,
   Projects,
+  Teen,
   Transfer,
   Frequency,
   RequestKind,
@@ -55,8 +56,9 @@ export class BudgetApi {
 
   // Accounts
 
-  accounts(): Observable<Account[]> {
-    return this.http.get<Account[]>('api/accounts');
+  /** The household's accounts; with `teens`, the teenagers' too */
+  accounts(teens = false): Observable<Account[]> {
+    return this.http.get<Account[]>('api/accounts', teens ? { params: { teens: 1 } } : {});
   }
 
   saveAccount(
@@ -66,6 +68,8 @@ export class BudgetApi {
       type: AccountType;
       initialBalance: number;
       minimumBalance: number | null;
+      /** The teenager holding it; null for the household */
+      ownerId: number | null;
     },
   ): Observable<Account> {
     return id === null
@@ -97,7 +101,8 @@ export class BudgetApi {
 
   operations(
     month: string,
-    filters: { accountId?: number; categoryId?: number } = {},
+    /** Without an account: the household's, or with `ownerId` a teenager's */
+    filters: { accountId?: number; categoryId?: number; ownerId?: number } = {},
   ): Observable<Operation[]> {
     let params = new HttpParams().set('month', month);
     for (const [key, value] of Object.entries(filters)) {
@@ -116,6 +121,11 @@ export class BudgetApi {
 
   deleteOperation(id: number): Observable<void> {
     return this.http.delete<void>(`api/operations/${id}`);
+  }
+
+  /** Ticks an operation off against the bank statement, or unticks it */
+  reconcile(id: number, reconciled: boolean): Observable<Operation> {
+    return this.http.put<Operation>(`api/operations/${id}/reconciled`, { reconciled });
   }
 
   // Transfers between accounts
@@ -244,18 +254,55 @@ export class BudgetApi {
     return this.http.delete<PocketMoney>(`api/pocket-money/${entryId}`);
   }
 
+  // Teenagers
+
+  teens(): Observable<Teen[]> {
+    return this.http.get<Teen[]>('api/teens');
+  }
+
+  teen(teenId: number): Observable<Teen> {
+    return this.http.get<Teen>(`api/teens/${teenId}`);
+  }
+
+  setTeenAllowance(teenId: number, allowance: Allowance): Observable<Teen> {
+    return this.http.put<Teen>(`api/teens/${teenId}/allowance`, allowance);
+  }
+
+  removeTeenAllowance(teenId: number): Observable<Teen> {
+    return this.http.delete<Teen>(`api/teens/${teenId}/allowance`);
+  }
+
   // Requests
 
   requests(): Observable<MoneyRequest[]> {
     return this.http.get<MoneyRequest[]>('api/requests');
   }
 
-  ask(payload: { kind: RequestKind; amount: number; reason: string }): Observable<MoneyRequest> {
+  ask(payload: {
+    kind: Exclude<RequestKind, 'reimbursement'>;
+    amount: number;
+    reason: string;
+  }): Observable<MoneyRequest> {
     return this.http.post<MoneyRequest>('api/requests', payload);
   }
 
-  approve(id: number, answer: string | null, accountId: number | null): Observable<MoneyRequest> {
-    return this.http.post<MoneyRequest>(`api/requests/${id}/approve`, { answer, accountId });
+  /** A teenager asks to be paid back for one of their expenses */
+  askReimbursement(operationId: number): Observable<MoneyRequest> {
+    return this.http.post<MoneyRequest>('api/requests/reimbursement', { operationId });
+  }
+
+  /** `accountId`: household account it is taken from; `categoryId`: for a reimbursement */
+  approve(
+    id: number,
+    answer: string | null,
+    accountId: number | null,
+    categoryId: number | null = null,
+  ): Observable<MoneyRequest> {
+    return this.http.post<MoneyRequest>(`api/requests/${id}/approve`, {
+      answer,
+      accountId,
+      categoryId,
+    });
   }
 
   reject(id: number, answer: string | null): Observable<MoneyRequest> {

@@ -59,6 +59,39 @@
       </div>
 
       <div class="cards">
+        @if (d.forecast; as f) {
+          <section class="card forecast">
+            <h2>Reste prévu fin {{ d.month | month }}</h2>
+            <p class="forecast-total" [class.negative]="f.remaining < 0">
+              {{ f.remaining | euros: true }}
+            </p>
+            <dl class="forecast-lines">
+              <div>
+                <dt>Revenus reçus et à venir</dt>
+                <dd class="amount amount-in">{{ f.income | euros: true }}</dd>
+              </div>
+              <div>
+                <dt>Budgets (ou dépensé, si plus)</dt>
+                <dd class="amount">{{ -f.budgets | euros: true }}</dd>
+              </div>
+              <div>
+                <dt>Récurrentes hors budgets</dt>
+                <dd class="amount">{{ -f.recurring | euros: true }}</dd>
+              </div>
+              <div>
+                <dt>Argent de poche</dt>
+                <dd class="amount">{{ -f.pocketMoney | euros: true }}</dd>
+              </div>
+              <div>
+                <dt>Autres dépenses du mois</dt>
+                <dd class="amount">{{ -f.other | euros: true }}</dd>
+              </div>
+            </dl>
+            <p class="muted more">
+              Les dépenses récurrentes d’une catégorie budgétée comptent dans son budget.
+            </p>
+          </section>
+        }
         <section class="card">
           <div class="card-header">
             <h2>Dépenses par catégorie</h2>
@@ -208,6 +241,26 @@
             </p>
           }
         </section>
+
+        @if (d.teens.length) {
+          <section class="card">
+            <div class="card-header">
+              <h2>Comptes des ados</h2>
+            </div>
+            <ul class="list">
+              @for (t of d.teens; track t.id) {
+                <li>
+                  <app-icon name="wallet" />
+                  <a class="grow ellipsis child" [routerLink]="['/famille/ado', t.id]">{{
+                    t.displayName
+                  }}</a>
+                  <span class="amount">{{ t.balance | euros }}</span>
+                </li>
+              }
+            </ul>
+            <p class="muted more">En dehors du solde et des chiffres du foyer.</p>
+          </section>
+        }
       </div>
     </div>
   } @else if (!error()) {

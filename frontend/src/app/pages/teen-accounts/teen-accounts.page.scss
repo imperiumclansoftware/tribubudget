@@ -1,0 +1,185 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-bottom: 0.35rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  .hero-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--primary-bg);
+    color: var(--primary);
+  }
+  .hero-label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .amount-large {
+    font-size: clamp(2rem, 9vw, 2.75rem);
+  }
+}
+
+/* The accounts double as the filter of the operations */
+.accounts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &.selected {
+    border-color: var(--primary);
+    background: var(--primary-bg);
+  }
+}
+
+.hint-accounts {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.infos {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  .section-title {
+    margin: 0;
+  }
+}
+
+.days {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.day-title {
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--text-secondary);
+}
+
+.kind,
+.transfer-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+}
+
+.kind.in {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.transfer-icon {
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+
+/* Money moved, not earned nor spent */
+.transfer-amount {
+  color: var(--text-secondary);
+}
+
+.badge {
+  margin-top: 4px;
+}
+
+.block {
+  display: block;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.summary-column {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+/* Desktop: the balances stay in view beside the operations */
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 32px;
+    align-items: start;
+  }
+  .summary-column {
+    position: sticky;
+    top: calc(var(--app-bar-height) + 24px);
+  }
+}
+
+/* Phones: the reconcile check takes the place of the icon, leaving room for the label */
+@media (max-width: 599px) {
+  .transaction-item > .kind,
+  .transaction-item > .transfer-icon {
+    display: none;
+  }
+}

@@ -2,17 +2,18 @@
 
 **Le budget de toute la famille.**
 
-TribuBudget réunit parents et enfants autour du budget du foyer, dans un espace privé, auto-hébergé, en
+TribuBudget réunit parents, ados et enfants autour du budget du foyer, dans un espace privé, auto-hébergé, en
 français :
 
-- **Deux profils** : les parents voient et gèrent tout ; les enfants voient leur tirelire, notent leurs
-  dépenses et demandent une avance ou un achat
-- **Comptes et opérations** par catégorie, **virements** entre comptes
+- **Trois profils** : les parents voient et gèrent tout ; les ados tiennent leurs propres comptes, sous
+  l’œil des parents, et demandent le remboursement de leurs dépenses ; les enfants voient leur tirelire,
+  notent leurs dépenses et demandent une avance ou un achat
+- **Comptes et opérations** par catégorie, **virements** entre comptes, **pointage** sur le relevé
 - **Opérations récurrentes** (loyer, abonnements, salaire) enregistrées seules à leur date
 - **Budgets mensuels** par catégorie, dépassements signalés
 - **Projets d’épargne** financés par ordre de priorité, au-dessus d’un plancher
 - **Argent de poche automatique**, avances remboursées sur les versements suivants
-- **Tableau de bord** : solde, mois en cours, six derniers mois, projets réalisables, prochaines échéances
+- **Tableau de bord** : solde, mois en cours, reste prévu fin du mois, six derniers mois, projets réalisables, prochaines échéances
 - Interface pensée pour le téléphone, jusqu’à l’écran large ; thème clair ou sombre selon le système
 
 L’image contient **tout** : l’interface Angular et l’API Symfony servies par [FrankenPHP](https://frankenphp.dev)
@@ -27,6 +28,7 @@ base sont créés au premier lancement.
 | Tag | Contenu |
 |---|---|
 | `latest` | Dernière version publiée |
+| `0.3.0` | Profil ado avec ses propres comptes et demandes de remboursement, pointage des opérations, reste prévu fin du mois |
 | `0.2.0` | Image tout-en-un (base intégrée, secrets créés au premier lancement), page d’installation avec code |
 | `0.1.0` | Première version (base PostgreSQL séparée) |
 
@@ -74,7 +76,7 @@ docker compose up -d
    ```
    (ou `docker exec tribubudget console app:setup:code`)
 3. Ouvrez `http://<serveur>:8080` : la page d’installation demande ce code, puis crée **votre famille et votre
-   compte de parent**. Ajoutez ensuite l’autre parent et les enfants depuis la page *Famille*.
+   compte de parent**. Ajoutez ensuite l’autre parent, les ados et les enfants depuis la page *Famille*.
 
 Le code empêche quelqu’un d’autre d’installer TribuBudget à votre place s’il atteint la page avant vous. Une
 instance accueille une famille : il n’y a pas d’inscription libre.

@@ -5,7 +5,8 @@ import { formatCents, formatDay, formatMonth } from '../core/money';
 @Pipe({ name: 'euros' })
 export class EurosPipe implements PipeTransform {
   transform(cents: number, signed = false): string {
-    const text = formatCents(cents);
+    // `|| 0`: a negated zero (-0) is shown as 0,00 €, not -0,00 €
+    const text = formatCents(cents || 0);
     return signed && cents > 0 ? `+${text}` : text;
   }
 }

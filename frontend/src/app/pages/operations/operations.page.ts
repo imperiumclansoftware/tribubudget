@@ -9,6 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import {
   FormsModule,
@@ -19,19 +20,30 @@ import {
 import { Router } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '../../core/api/api-error';
-import { Category, CategoryKind, Operation } from '../../core/api/models';
+import { Account, Category, CategoryKind, Operation } from '../../core/api/models';
 import { BudgetApi } from '../../core/budget-api';
 import { centsToInput, currentMonth, formatLongDay, parseEuros, todayIso } from '../../core/money';
 import { EurosPipe } from '../../shared/euros.pipe';
 import { Icon } from '../../shared/icon';
 import { Modal } from '../../shared/modal';
 import { MonthPicker } from '../../shared/month-picker';
+import { ReconcileCheck } from '../../shared/reconcile-check';
 import { OperationTabs } from './operation-tabs';
 
 /** Income and expenses of a month, grouped by day, with filters and an add/edit dialog. */
 @Component({
   selector: 'app-operations-page',
-  imports: [ReactiveFormsModule, FormsModule, MonthPicker, Modal, Icon, EurosPipe, OperationTabs],
+  imports: [
+    ReactiveFormsModule,
+    FormsModule,
+    NgTemplateOutlet,
+    MonthPicker,
+    Modal,
+    Icon,
+    EurosPipe,
+    OperationTabs,
+    ReconcileCheck,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './operations.page.html',
   styleUrl: './operations.page.scss',
@@ -44,7 +56,27 @@ export class OperationsPage {
   protected readonly accountFilter = signal<number | null>(null);
   protected readonly categoryFilter = signal<number | null>(null);
 
-  protected readonly accounts = rxResource({ stream: () => this.api.accounts() });
+  /** With the teenagers': a transfer may go to them, and the history names them */
+  private readonly allAccounts = rxResource({ stream: () => this.api.accounts(true) });
+  /** The accounts of the household budget, the only ones its operations use */
+  protected readonly accounts = computed(() =>
+    (this.allAccounts.value() ?? []).filter((a) => !a.owner),
+  );
+  /** The teenagers' accounts, grouped by teenager, as transfer targets */
+  protected readonly teenAccounts = computed(() => {
+    const groups = new Map<number, { name: string; accounts: Account[] }>();
+    for (const account of this.allAccounts.value() ?? []) {
+      if (account.owner) {
+        const group = groups.get(account.owner.id) ?? {
+          name: account.owner.displayName,
+          accounts: [],
+        };
+        group.accounts.push(account);
+        groups.set(account.owner.id, group);
+      }
+    }
+    return [...groups.values()];
+  });
   protected readonly categories = rxResource({ stream: () => this.api.categories() });
   private readonly operations = rxResource({
     params: () => ({
@@ -62,12 +94,27 @@ export class OperationsPage {
   protected readonly loadError = computed(() =>
     this.operations.error() ? apiErrorMessage(this.operations.error()) : null,
   );
+  protected readonly actionError = signal<string | null>(null);
+  /** The account filtered on, with its reconciled balance to compare with the bank statement */
+  protected readonly filteredAccount = computed(() => {
+    const id = this.accountFilter();
+    return id === null ? undefined : this.accountsById().get(id);
+  });
+
+  /** An operation ticked off or unticked: its balance changes the account's reconciled one */
+  protected reconciled(operation: Operation): void {
+    this.actionError.set(null);
+    this.list.update((list) =>
+      list?.map((o) => (o.id === operation.id ? { ...o, reconciled: operation.reconciled } : o)),
+    );
+    this.allAccounts.reload();
+  }
 
   private readonly categoriesById = computed(
     () => new Map((this.categories.value() ?? []).map((c) => [c.id, c])),
   );
   private readonly accountsById = computed(
-    () => new Map((this.accounts.value() ?? []).map((a) => [a.id, a])),
+    () => new Map((this.allAccounts.value() ?? []).map((a) => [a.id, a])),
   );
 
   protected readonly days = computed(() => {
@@ -115,7 +162,10 @@ export class OperationsPage {
   }
 
   protected accountName(id: number): string {
-    return this.accountsById().get(id)?.name ?? '';
+    const account = this.accountsById().get(id);
+    return account?.owner
+      ? `${account.name} (${account.owner.displayName})`
+      : (account?.name ?? '');
   }
 
   protected openNew(): void {
@@ -125,7 +175,7 @@ export class OperationsPage {
       amount: '',
       label: '',
       date: this.month() === currentMonth() ? todayIso() : `${this.month()}-01`,
-      accountId: this.accountFilter() ?? this.accounts.value()?.[0]?.id ?? 0,
+      accountId: this.accountFilter() ?? this.accounts()[0]?.id ?? 0,
       categoryId: this.categoryFilter() ?? 0,
     });
     this.formError.set(null);
@@ -169,7 +219,7 @@ export class OperationsPage {
       );
       this.editing.set(null);
       this.operations.reload();
-      this.accounts.reload();
+      this.allAccounts.reload();
     } catch (e) {
       this.formError.set(apiErrorMessage(e));
     } finally {
@@ -185,7 +235,7 @@ export class OperationsPage {
       await firstValueFrom(this.api.deleteOperation(operation.id));
       this.editing.set(null);
       this.operations.reload();
-      this.accounts.reload();
+      this.allAccounts.reload();
     } catch (e) {
       this.formError.set(apiErrorMessage(e));
     }
@@ -221,11 +271,12 @@ export class OperationsPage {
     const already = editing?.id ? this.editedTransferEffect(from.id) : 0;
     const before = from.balance + already;
     return {
-      fromName: from.name,
+      fromName: this.accountName(from.id),
       fromBefore: before,
       fromAfter: before - amount,
-      toName: to.name,
-      toSavings: to.type === 'savings',
+      toName: this.accountName(to.id),
+      // Only the household's savings feed the projects
+      toSavings: to.type === 'savings' && !to.owner,
     };
   });
   private editedTransfer: { fromAccountId: number; toAccountId: number; amount: number } | null =
@@ -235,7 +286,7 @@ export class OperationsPage {
     // Once only: then the parameter leaves the URL, so that reloading the accounts after the
     // transfer, or the page, does not open the dialog again
     effect(() => {
-      if (this.virement() && this.accounts.value()?.length) {
+      if (this.virement() && this.accounts().length) {
         untracked(() => {
           this.openTransfer();
           void this.router.navigate([], { queryParams: { virement: null }, replaceUrl: true });
@@ -245,7 +296,7 @@ export class OperationsPage {
   }
 
   protected openTransfer(operation?: Operation): void {
-    const accounts = this.accounts.value() ?? [];
+    const accounts = this.accounts();
     if (operation?.transfer) {
       const out = operation.amount < 0;
       const fromAccountId = out ? operation.accountId : operation.transfer.counterpartAccountId;
@@ -322,7 +373,7 @@ export class OperationsPage {
       await firstValueFrom(request);
       this.closeTransfer();
       this.operations.reload();
-      this.accounts.reload();
+      this.allAccounts.reload();
     } catch (e) {
       this.formError.set(apiErrorMessage(e));
     } finally {

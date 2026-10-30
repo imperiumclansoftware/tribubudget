@@ -30,6 +30,7 @@ export class FamilyPage {
 
   protected readonly members = rxResource({ stream: () => this.api.members() });
   protected readonly children = rxResource({ stream: () => this.api.children() });
+  protected readonly teens = rxResource({ stream: () => this.api.teens() });
   protected readonly parents = computed(() =>
     (this.members.value() ?? []).filter((m) => m.role === 'parent'),
   );
@@ -58,7 +59,9 @@ export class FamilyPage {
 
   protected async add(): Promise<void> {
     if (this.addForm.invalid) {
-      this.error.set('Remplissez le prénom, un identifiant (3 caractères ou plus) et le code.');
+      this.error.set(
+        'Remplissez le prénom, un identifiant (3 caractères ou plus) et le code ou le mot de passe.',
+      );
       return;
     }
     const value = this.addForm.getRawValue();
@@ -105,10 +108,11 @@ export class FamilyPage {
   }
 
   protected async remove(member: Member): Promise<void> {
-    const warning =
-      member.role === 'child'
-        ? `Supprimer ${member.displayName} ? Sa tirelire et ses demandes seront effacées.`
-        : `Retirer ${member.displayName} de la famille ?`;
+    const warning = {
+      child: `Supprimer ${member.displayName} ? Sa tirelire et ses demandes seront effacées.`,
+      teen: `Supprimer ${member.displayName} ? Ses demandes seront effacées ; ses comptes qui ont un historique reviennent au foyer.`,
+      parent: `Retirer ${member.displayName} de la famille ?`,
+    }[member.role];
     if (confirm(warning)) {
       await this.run(async () => {
         await firstValueFrom(this.api.deleteMember(member.id));
@@ -121,6 +125,7 @@ export class FamilyPage {
   private reload(): void {
     this.members.reload();
     this.children.reload();
+    this.teens.reload();
   }
 
   private async run(action: () => Promise<void>): Promise<void> {

@@ -10,7 +10,8 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * Member of a family: a parent (every right) or a child (their own pocket money and requests).
+ * Member of a family: a parent (every right), a teenager (their own accounts, overseen by the
+ * parents, and requests) or a child (their own pocket money and requests).
  */
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
@@ -28,7 +29,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, FamilyO
     #[ORM\Column]
     private string $password = '';
 
-    /** Advances granted to a child and not yet repaid by their allowances, in cents */
+    /** Advances granted to a child or a teenager and not yet repaid by their allowances, in cents */
     #[ORM\Column(options: ['default' => 0])]
     private int $advanceOwed = 0;
 
@@ -94,6 +95,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, FamilyO
     public function isChild(): bool
     {
         return FamilyRole::Child === $this->role;
+    }
+
+    public function isTeen(): bool
+    {
+        return FamilyRole::Teen === $this->role;
     }
 
     public function getRoles(): array

@@ -50,7 +50,7 @@ final class RecurringOperationController extends AbstractController
     public function create(#[CurrentUser] User $me, #[MapRequestPayload] RecurringOperationRequest $payload): JsonResponse
     {
         $recurring = new RecurringOperation(
-            $this->lookup->account($payload->accountId, $me),
+            $this->lookup->householdAccount($payload->accountId, $me),
             $this->lookup->category($payload->categoryId, $me),
             $payload->signedAmount(),
             Text::clean($payload->label),
@@ -71,7 +71,7 @@ final class RecurringOperationController extends AbstractController
     {
         $this->sameFamily($recurring, $me);
         $recurring->edit(
-            $this->lookup->account($payload->accountId, $me),
+            $this->lookup->householdAccount($payload->accountId, $me),
             $this->lookup->category($payload->categoryId, $me),
             $payload->signedAmount(),
             Text::clean($payload->label),

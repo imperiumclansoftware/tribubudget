@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Observable, firstValueFrom, of } from 'rxjs';
 import { apiErrorMessage } from '../../core/api/api-error';
 import { MoneyRequest, RequestKind } from '../../core/api/models';
@@ -9,16 +10,23 @@ import { BudgetApi } from '../../core/budget-api';
 import { REQUEST_KIND_LABELS, REQUEST_STATUS_LABELS } from '../../core/labels';
 import { parseEuros } from '../../core/money';
 import { EurosPipe } from '../../shared/euros.pipe';
-import { Icon } from '../../shared/icon';
+import { Icon, IconName } from '../../shared/icon';
 import { Modal } from '../../shared/modal';
 
+const KIND_ICONS: Record<RequestKind, IconName> = {
+  advance: 'inbox',
+  purchase: 'cart',
+  reimbursement: 'receipt',
+};
+
 /**
- * Children ask for an advance on their pocket money or for a purchase; parents accept or
- * refuse, with a word of explanation.
+ * Children and teenagers ask for an advance on their pocket money or for a purchase; teenagers
+ * also ask to be paid back for an expense (from their accounts page). Parents accept or refuse,
+ * with a word of explanation.
  */
 @Component({
   selector: 'app-requests-page',
-  imports: [ReactiveFormsModule, Modal, Icon, EurosPipe],
+  imports: [ReactiveFormsModule, RouterLink, Modal, Icon, EurosPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './requests.page.html',
   styleUrl: './requests.page.scss',
@@ -33,6 +41,14 @@ export class RequestsPage {
     params: () => this.auth.isParent(),
     stream: ({ params: isParent }) => (isParent ? this.api.accounts() : of([])),
   });
+  /** Where a parent records a reimbursement in the household budget */
+  private readonly categories = rxResource({
+    params: () => this.auth.isParent(),
+    stream: ({ params: isParent }) => (isParent ? this.api.categories() : of([])),
+  });
+  protected readonly expenseCategories = computed(() =>
+    (this.categories.value() ?? []).filter((c) => c.kind === 'expense'),
+  );
   protected readonly pending = computed(() =>
     (this.requests.value() ?? []).filter((r) => r.status === 'pending'),
   );
@@ -44,6 +60,7 @@ export class RequestsPage {
   );
 
   protected readonly kindLabels = REQUEST_KIND_LABELS;
+  protected readonly kindIcons = KIND_ICONS;
   protected readonly statusLabels = REQUEST_STATUS_LABELS;
   protected readonly error = signal<string | null>(null);
   protected readonly busy = signal(false);
@@ -52,7 +69,7 @@ export class RequestsPage {
 
   protected readonly asking = signal(false);
   protected readonly askForm = this.fb.group({
-    kind: ['advance' as RequestKind],
+    kind: ['advance' as Exclude<RequestKind, 'reimbursement'>],
     amount: ['', Validators.required],
     reason: ['', Validators.required],
   });
@@ -80,10 +97,14 @@ export class RequestsPage {
   // A parent's answer
 
   protected readonly answering = signal<{ request: MoneyRequest; approve: boolean } | null>(null);
-  protected readonly answerForm = this.fb.group({ answer: [''], accountId: [0] });
+  protected readonly answerForm = this.fb.group({ answer: [''], accountId: [0], categoryId: [0] });
 
   protected openAnswer(request: MoneyRequest, approve: boolean): void {
-    this.answerForm.reset({ answer: '', accountId: this.accounts.value()?.[0]?.id ?? 0 });
+    this.answerForm.reset({
+      answer: '',
+      accountId: this.accounts.value()?.[0]?.id ?? 0,
+      categoryId: 0,
+    });
     this.error.set(null);
     this.answering.set({ request, approve });
   }
@@ -93,9 +114,14 @@ export class RequestsPage {
     if (!answering) {
       return;
     }
-    const { answer, accountId } = this.answerForm.getRawValue();
+    const { answer, accountId, categoryId } = this.answerForm.getRawValue();
     const request = answering.approve
-      ? this.api.approve(answering.request.id, answer || null, accountId || null)
+      ? this.api.approve(
+          answering.request.id,
+          answer || null,
+          accountId || null,
+          categoryId || null,
+        )
       : this.api.reject(answering.request.id, answer || null);
     await this.run(request, () => {
       this.answering.set(null);

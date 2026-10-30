@@ -34,8 +34,11 @@ security:
             provider: app_user_provider
             jwt: ~
 
+    # Parents and teenagers both record operations and transfers, each on the accounts they may
+    # use (FamilyLookup, OperationVoter)
     role_hierarchy:
-        ROLE_PARENT: ROLE_USER
+        ROLE_PARENT: [ROLE_USER, ROLE_ACCOUNT_HOLDER]
+        ROLE_TEEN: [ROLE_USER, ROLE_ACCOUNT_HOLDER]
         ROLE_CHILD: ROLE_USER
 
     # Note: Only the *first* matching rule is applied. The finer rights (parent or child,

@@ -6,6 +6,7 @@ use App\Entity\Account;
 use App\Entity\Category;
 use App\Entity\Family;
 use App\Entity\Operation;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -19,11 +20,12 @@ class OperationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Operations dated from $from (included) to $to (excluded), most recent first.
+     * Operations dated from $from (included) to $to (excluded), most recent first: of $account, or
+     * else of every account of $owner (a teenager), or else of every household account.
      *
      * @return list<Operation>
      */
-    public function between(Family $family, \DateTimeImmutable $from, \DateTimeImmutable $to, ?Account $account = null, ?Category $category = null): array
+    public function between(Family $family, \DateTimeImmutable $from, \DateTimeImmutable $to, ?Account $account = null, ?Category $category = null, ?User $owner = null): array
     {
         $qb = $this->period($family, $from, $to)
             ->addSelect('a', 'c')
@@ -32,6 +34,10 @@ class OperationRepository extends ServiceEntityRepository
             ->addOrderBy('o.id', 'DESC');
         if (null !== $account) {
             $qb->andWhere('o.account = :account')->setParameter('account', $account);
+        } elseif (null !== $owner) {
+            $qb->andWhere('a.owner = :owner')->setParameter('owner', $owner);
+        } else {
+            $qb->andWhere('a.owner IS NULL');
         }
         if (null !== $category) {
             $qb->andWhere('o.category = :category')->setParameter('category', $category);
@@ -84,10 +90,13 @@ class OperationRepository extends ServiceEntityRepository
         return $this->count(['account' => $account]);
     }
 
-    /** Money moved between the family's accounts is neither an income nor an expense */
+    /**
+     * Money moved between the family's accounts is neither an income nor an expense, and the
+     * teenagers' accounts stay outside the household budget.
+     */
     private function budgetPeriod(Family $family, \DateTimeImmutable $from, \DateTimeImmutable $to): QueryBuilder
     {
-        return $this->period($family, $from, $to)->andWhere('o.transfer IS NULL');
+        return $this->period($family, $from, $to)->andWhere('o.transfer IS NULL AND a.owner IS NULL');
     }
 
     private function period(Family $family, \DateTimeImmutable $from, \DateTimeImmutable $to): QueryBuilder

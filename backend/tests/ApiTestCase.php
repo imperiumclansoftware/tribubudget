@@ -71,6 +71,20 @@ abstract class ApiTestCase extends WebTestCase
         return [$child['id'], $this->login($username, $pin)];
     }
 
+    /** Adds a teenager to the parent's family; returns [teen id, teen token]. */
+    protected function addTeen(string $parentToken, string $username = 'hugo', string $password = 'secret-hugo'): array
+    {
+        $teen = $this->api('POST', '/api/members', $parentToken, [
+            'displayName' => ucfirst($username),
+            'username' => $username,
+            'role' => 'teen',
+            'password' => $password,
+        ]);
+        self::assertResponseStatusCodeSame(201);
+
+        return [$teen['id'], $this->login($username, $password)];
+    }
+
     protected function login(string $username, string $password): string
     {
         $response = $this->api('POST', '/api/login', null, ['username' => $username, 'password' => $password]);

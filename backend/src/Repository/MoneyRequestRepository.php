@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Family;
 use App\Entity\MoneyRequest;
+use App\Entity\Operation;
 use App\Entity\User;
 use App\Enum\RequestStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -20,7 +21,7 @@ class MoneyRequestRepository extends ServiceEntityRepository
     }
 
     /**
-     * Requests of the whole family, or of one child: the pending ones first, then the latest.
+     * Requests of the whole family, or of one child or teenager: the pending ones first, then the latest.
      *
      * @return list<MoneyRequest>
      */
@@ -40,6 +41,38 @@ class MoneyRequestRepository extends ServiceEntityRepository
         }
 
         return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * Latest reimbursement request of each of these operations.
+     *
+     * @param list<Operation> $operations
+     *
+     * @return array<int, MoneyRequest> operation id => request
+     */
+    public function latestForOperations(array $operations): array
+    {
+        if ([] === $operations) {
+            return [];
+        }
+        $latest = [];
+        $requests = $this->createQueryBuilder('r')
+            ->where('r.operation IN (:operations)')
+            ->setParameter('operations', $operations)
+            ->orderBy('r.createdAt')
+            ->addOrderBy('r.id')
+            ->getQuery()
+            ->getResult();
+        foreach ($requests as $request) {
+            $latest[$request->getOperation()->getId()] = $request;
+        }
+
+        return $latest;
+    }
+
+    public function latestForOperation(Operation $operation): ?MoneyRequest
+    {
+        return $this->findOneBy(['operation' => $operation], ['createdAt' => 'DESC', 'id' => 'DESC']);
     }
 
     public function countPending(Family $family): int

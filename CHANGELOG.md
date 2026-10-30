@@ -1,5 +1,27 @@
 # Journal des versions
 
+## 0.3.0 — 2026-10-30
+
+**Les ados et leurs comptes, le pointage et le reste prévu.**
+
+- **Profil ado** : connexion par mot de passe ; un *Compte courant* et une *Épargne* à lui dès sa création,
+  en dehors du budget du foyer (solde, chiffres du mois, budgets, projets), montrés à part au tableau de bord.
+- L’ado note ses revenus et dépenses et vire entre ses comptes ; les parents voient tout, notent aussi des
+  opérations, font des virements depuis ou vers le foyer et règlent son argent de poche, versé sur son
+  compte courant.
+- **Demandes de remboursement** : l’ado demande le remboursement d’une dépense ; accepté, le montant est
+  crédité sur son compte et enregistré comme dépense du foyer dans la catégorie choisie. Les ados font aussi
+  les demandes d’avance et d’achat.
+- **Pointage** des opérations sur le relevé de la banque : une case par opération, et le solde pointé de
+  chaque compte.
+- **Reste prévu fin du mois** au tableau de bord : revenus reçus et à venir, moins budgets, récurrentes hors
+  budgets, argent de poche à verser et autres dépenses du mois.
+- *Comptes* : comptes regroupés par titulaire, champ *Titulaire* ; modifier un compte d’épargne garde son
+  plancher (il était effacé).
+
+Mise à jour depuis 0.2.0 : rien à faire, la base est mise à jour au démarrage du conteneur (comptes des ados,
+demandes de remboursement, pointage).
+
 ## 0.2.0 — 2026-10-28
 
 **Image tout-en-un et page d’installation.**

@@ -143,7 +143,7 @@ final class SavingsProjectController extends AbstractController
 
     private function savingsAccount(?int $id, User $me): Account
     {
-        $account = $this->lookup->account($id, $me);
+        $account = $this->lookup->householdAccount($id, $me);
         if (null === $account || !$account->isSavings()) {
             throw new UnprocessableEntityHttpException('Un projet se rattache à un compte d’épargne.');
         }

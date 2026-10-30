@@ -45,8 +45,12 @@ final class ApiPresenter
         return ['id' => $family->getId(), 'name' => $family->getName()];
     }
 
-    /** @return array<string, mixed> */
-    public function account(Account $account, int $balance): array
+    /**
+     * @param ?int $reconciledBalance initial balance plus the operations ticked off; left out when null
+     *
+     * @return array<string, mixed>
+     */
+    public function account(Account $account, int $balance, ?int $reconciledBalance = null): array
     {
         return [
             'id' => $account->getId(),
@@ -55,7 +59,11 @@ final class ApiPresenter
             'initialBalance' => $account->getInitialBalance(),
             'minimumBalance' => $account->getMinimumBalance(),
             'balance' => $balance,
-        ];
+            'owner' => null === $account->getOwner() ? null : [
+                'id' => $account->getOwner()->getId(),
+                'displayName' => $account->getOwner()->getDisplayName(),
+            ],
+        ] + (null === $reconciledBalance ? [] : ['reconciledBalance' => $reconciledBalance]);
     }
 
     /**
@@ -106,8 +114,13 @@ final class ApiPresenter
         ];
     }
 
-    /** @return array<string, mixed> */
-    public function operation(Operation $operation): array
+    /**
+     * @param ?MoneyRequest $reimbursement latest request to be reimbursed for this expense, if any
+     * @param ?bool         $editable      whether the viewer may change it (or its transfer); left out when null
+     *
+     * @return array<string, mixed>
+     */
+    public function operation(Operation $operation, ?MoneyRequest $reimbursement = null, ?bool $editable = null): array
     {
         return [
             'id' => $operation->getId(),
@@ -118,12 +131,17 @@ final class ApiPresenter
             'date' => $operation->getDate()->format('Y-m-d'),
             'createdBy' => $operation->getCreatedBy()?->getDisplayName(),
             'recurringId' => $operation->getRecurring()?->getId(),
+            'reconciled' => $operation->isReconciled(),
             'transfer' => null === $operation->getTransfer() ? null : [
                 'id' => $operation->getTransfer()->getId(),
                 // The other account: where the money went, or where it came from
                 'counterpartAccountId' => $operation->getTransfer()->counterpartOf($operation)->getId(),
             ],
-        ];
+            'reimbursement' => null === $reimbursement ? null : [
+                'id' => $reimbursement->getId(),
+                'status' => $reimbursement->getStatus()->value,
+            ],
+        ] + (null === $editable ? [] : ['editable' => $editable]);
     }
 
     /** @return array<string, mixed> */
@@ -178,6 +196,31 @@ final class ApiPresenter
         ];
     }
 
+    /**
+     * A teenager, with their accounts and the sum of their balances.
+     *
+     * @param list<Account>   $accounts
+     * @param array<int, int> $balances           account id => balance
+     * @param array<int, int> $reconciledBalances account id => balance of the operations ticked off
+     *
+     * @return array<string, mixed>
+     */
+    public function teen(User $teen, array $accounts, array $balances, array $reconciledBalances, ?Allowance $allowance): array
+    {
+        $presented = array_map(fn (Account $a) => $this->account(
+            $a,
+            $balances[$a->getId()] ?? $a->getInitialBalance(),
+            $reconciledBalances[$a->getId()] ?? $a->getInitialBalance(),
+        ), $accounts);
+
+        return $this->user($teen) + [
+            'balance' => array_sum(array_column($presented, 'balance')),
+            'advanceOwed' => $teen->getAdvanceOwed(),
+            'allowance' => null === $allowance ? null : $this->allowance($allowance),
+            'accounts' => $presented,
+        ];
+    }
+
     /** @return array<string, mixed> */
     public function pocketMoneyEntry(PocketMoneyEntry $entry, User $viewer): array
     {
@@ -201,6 +244,7 @@ final class ApiPresenter
             'kind' => $request->getKind()->value,
             'amount' => $request->getAmount(),
             'reason' => $request->getReason(),
+            'operationId' => $request->getOperation()?->getId(),
             'status' => $request->getStatus()->value,
             'createdAt' => $request->getCreatedAt()->format(\DATE_ATOM),
             'decidedBy' => $request->getDecidedBy()?->getDisplayName(),

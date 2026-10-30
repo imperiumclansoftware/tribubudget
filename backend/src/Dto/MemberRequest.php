@@ -6,7 +6,7 @@ use App\Entity\User;
 use App\Enum\FamilyRole;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/** A parent adds a member to the family: another parent, or a child. */
+/** A parent adds a member to the family: another parent, a teenager or a child. */
 final readonly class MemberRequest
 {
     public function __construct(

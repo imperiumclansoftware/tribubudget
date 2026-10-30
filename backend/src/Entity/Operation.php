@@ -21,6 +21,10 @@ class Operation implements FamilyOwned
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
+    /** Ticked off against the bank statement */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $reconciled = false;
+
     public function __construct(
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -99,6 +103,16 @@ class Operation implements FamilyOwned
     public function getRecurring(): ?RecurringOperation
     {
         return $this->recurring;
+    }
+
+    public function isReconciled(): bool
+    {
+        return $this->reconciled;
+    }
+
+    public function reconcile(bool $reconciled): void
+    {
+        $this->reconciled = $reconciled;
     }
 
     public function getTransfer(): ?Transfer

@@ -132,6 +132,22 @@ class RecurringOperation implements FamilyOwned
     }
 
     /** Records the operation of the current date and moves on to the next one. */
+    /**
+     * Dates still to be recorded before $end (excluded), from the next one: none once paused or
+     * past its end date.
+     *
+     * @return list<\DateTimeImmutable>
+     */
+    public function datesBefore(\DateTimeImmutable $end): array
+    {
+        $dates = [];
+        for ($date = $this->nextOn; $this->active && $date < $end && (null === $this->endsOn || $date <= $this->endsOn); $date = $this->frequency->next($date, $this->dayOfMonth)) {
+            $dates[] = $date;
+        }
+
+        return $dates;
+    }
+
     public function occur(): Operation
     {
         $operation = new Operation($this->account, $this->category, $this->amount, $this->label, $this->nextOn, null, $this);

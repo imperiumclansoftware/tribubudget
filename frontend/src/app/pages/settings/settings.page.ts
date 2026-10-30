@@ -12,7 +12,7 @@ import { EurosPipe } from '../../shared/euros.pipe';
 import { Icon } from '../../shared/icon';
 import { Modal } from '../../shared/modal';
 
-/** Accounts of the household and categories of the operations. */
+/** Accounts of the household and of the teenagers, and categories of the operations. */
 @Component({
   selector: 'app-settings-page',
   imports: [ReactiveFormsModule, RouterLink, Modal, Icon, EurosPipe],
@@ -23,7 +23,27 @@ export class SettingsPage {
   private readonly api = inject(BudgetApi);
   private readonly fb = inject(NonNullableFormBuilder);
 
-  protected readonly accounts = rxResource({ stream: () => this.api.accounts() });
+  protected readonly accounts = rxResource({ stream: () => this.api.accounts(true) });
+  private readonly members = rxResource({ stream: () => this.api.members() });
+  protected readonly teens = computed(() =>
+    (this.members.value() ?? []).filter((m) => m.role === 'teen'),
+  );
+  /** The household's accounts, then each teenager's */
+  protected readonly accountGroups = computed(() => {
+    const accounts = this.accounts.value() ?? [];
+    return [
+      {
+        title: 'Comptes du foyer',
+        ownerId: 0,
+        items: accounts.filter((a) => !a.owner),
+      },
+      ...this.teens().map((teen) => ({
+        title: `Comptes de ${teen.displayName}`,
+        ownerId: teen.id,
+        items: accounts.filter((a) => a.owner?.id === teen.id),
+      })),
+    ];
+  });
   protected readonly categories = rxResource({ stream: () => this.api.categories() });
   protected readonly categoryGroups = computed(() => {
     const categories = this.categories.value() ?? [];
@@ -56,19 +76,27 @@ export class SettingsPage {
     type: ['checking' as AccountType],
     initialBalance: ['0'],
     minimumBalance: [''],
+    /** 0 for the household */
+    ownerId: [0],
   });
   protected readonly accountType = toSignal(this.accountForm.controls.type.valueChanges, {
     initialValue: this.accountForm.controls.type.value,
   });
+  protected readonly accountOwner = toSignal(this.accountForm.controls.ownerId.valueChanges, {
+    initialValue: this.accountForm.controls.ownerId.value,
+  });
 
-  protected openAccount(account: Account | 'new'): void {
+  protected openAccount(account: Account | 'new', ownerId = 0): void {
     this.accountForm.reset(
       account === 'new'
-        ? { name: '', type: 'checking', initialBalance: '0' }
+        ? { name: '', type: 'checking', initialBalance: '0', ownerId }
         : {
             name: account.name,
             type: account.type,
             initialBalance: centsToInput(account.initialBalance),
+            minimumBalance:
+              account.minimumBalance === null ? '' : centsToInput(account.minimumBalance),
+            ownerId: account.owner?.id ?? 0,
           },
     );
     this.error.set(null);
@@ -78,8 +106,9 @@ export class SettingsPage {
   protected async saveAccount(): Promise<void> {
     const value = this.accountForm.getRawValue();
     const initialBalance = parseEuros(value.initialBalance || '0');
+    // The floor only matters to the household's projects
     const minimumBalance =
-      value.type === 'savings' && value.minimumBalance.trim()
+      value.type === 'savings' && !value.ownerId && value.minimumBalance.trim()
         ? parseEuros(value.minimumBalance)
         : null;
     if (this.accountForm.invalid || initialBalance === null) {
@@ -88,6 +117,7 @@ export class SettingsPage {
     }
     if (
       value.type === 'savings' &&
+      !value.ownerId &&
       value.minimumBalance.trim() &&
       (minimumBalance === null || minimumBalance < 0)
     ) {
@@ -102,6 +132,7 @@ export class SettingsPage {
           type: value.type,
           initialBalance,
           minimumBalance,
+          ownerId: value.ownerId || null,
         }),
       );
       this.editingAccount.set(null);

@@ -9,7 +9,7 @@ use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
- * Children ask, parents answer. A child may withdraw their own request while it is pending.
+ * Children and teenagers ask, parents answer. They may withdraw their own request while it is pending.
  *
  * @extends Voter<string, MoneyRequest|null>
  */
@@ -31,7 +31,7 @@ final class MoneyRequestVoter extends Voter
             return false;
         }
         if (self::CREATE === $attribute) {
-            return $me->isChild();
+            return $me->isChild() || $me->isTeen();
         }
         if ($me->getFamily() !== $subject->getFamily() || !$subject->isPending()) {
             return false;

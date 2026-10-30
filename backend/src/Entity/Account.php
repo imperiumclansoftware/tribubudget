@@ -6,7 +6,10 @@ use App\Enum\AccountType;
 use App\Repository\AccountRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-/** Bank account or cash of the household. */
+/**
+ * Bank account or cash: of the household, or of a teenager (their owner), which stays outside the
+ * household budget and is overseen by the parents.
+ */
 #[ORM\Entity(repositoryClass: AccountRepository::class)]
 class Account implements FamilyOwned
 {
@@ -35,6 +38,10 @@ class Account implements FamilyOwned
         /** Balance before the first recorded operation, in cents */
         #[ORM\Column]
         private int $initialBalance = 0,
+        /** The teenager holding the account; null for the household's accounts */
+        #[ORM\ManyToOne]
+        #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+        private ?User $owner = null,
     ) {
     }
 
@@ -61,6 +68,26 @@ class Account implements FamilyOwned
     public function getInitialBalance(): int
     {
         return $this->initialBalance;
+    }
+
+    public function getOwner(): ?User
+    {
+        return $this->owner;
+    }
+
+    public function isHousehold(): bool
+    {
+        return null === $this->owner;
+    }
+
+    public function setOwner(?User $owner): void
+    {
+        $this->owner = $owner;
+    }
+
+    public function rename(string $name): void
+    {
+        $this->name = $name;
     }
 
     public function isSavings(): bool

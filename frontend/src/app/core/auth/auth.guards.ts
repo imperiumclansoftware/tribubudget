@@ -24,13 +24,18 @@ export const guestGuard: CanActivateFn = async () => {
   return !(await inject(AuthService).restoreSession()) || router.createUrlTree(['/']);
 };
 
-/** The household budget: parents only. Children land on their piggy bank. */
+/** The household budget: parents only. The others land on their own home page. */
 export const parentGuard: CanActivateFn = () => {
-  const router = inject(Router);
-  return inject(AuthService).isParent() || router.createUrlTree(['/ma-tirelire']);
+  const auth = inject(AuthService);
+  return auth.isParent() || inject(Router).createUrlTree([auth.home()]);
 };
 
 export const childGuard: CanActivateFn = () => {
-  const router = inject(Router);
-  return inject(AuthService).isChild() || router.createUrlTree(['/']);
+  const auth = inject(AuthService);
+  return auth.isChild() || inject(Router).createUrlTree([auth.home()]);
+};
+
+export const teenGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  return auth.isTeen() || inject(Router).createUrlTree([auth.home()]);
 };
