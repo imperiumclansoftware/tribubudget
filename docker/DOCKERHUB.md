@@ -28,6 +28,7 @@ base sont créés au premier lancement.
 | Tag | Contenu |
 |---|---|
 | `latest` | Dernière version publiée |
+| `0.3.1` | Correctifs de sécurité d’Alpine (`curl` 8.23.0) |
 | `0.3.0` | Profil ado avec ses propres comptes et demandes de remboursement, pointage des opérations, reste prévu fin du mois |
 | `0.2.0` | Image tout-en-un (base intégrée, secrets créés au premier lancement), page d’installation avec code |
 | `0.1.0` | Première version (base PostgreSQL séparée) |

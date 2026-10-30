@@ -1,5 +1,12 @@
 # Journal des versions
 
+## 0.3.1 — 2026-10-30
+
+**Correctifs de sécurité de l’image.**
+
+- L’image applique les correctifs de sécurité d’Alpine publiés depuis l’image de base : `curl` 8.23.0
+  (CVE-2026-92392, use-after-free lors d’un envoi HTTP/2).
+
 ## 0.3.0 — 2026-10-30
 
 **Les ados et leurs comptes, le pointage et le reste prévu.**

@@ -34,7 +34,9 @@ ARG PHP_MIN_VERSION=8.4.27
 RUN php -r 'exit(version_compare(PHP_VERSION, getenv("PHP_MIN_VERSION"), ">=") ? 0 : 1);' \
     || { echo "PHP $(php -r 'echo PHP_VERSION;') trop ancien : $PHP_MIN_VERSION minimum (failles de sécurité). Reconstruisez avec --pull." >&2; exit 1; }
 
+# apk upgrade: the Alpine security fixes published since the base image was built (curl…)
 RUN install-php-extensions pdo_pgsql intl zip \
+    && apk upgrade --no-cache \
     && apk add --no-cache curl libcap-utils tini su-exec openssl postgresql16 postgresql16-client \
     && mkdir -p /run/postgresql && chown postgres:postgres /run/postgresql \
     && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
