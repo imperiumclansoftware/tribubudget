@@ -1,5 +1,22 @@
 # Journal des versions
 
+## 0.5.0 — 2026-10-31
+
+**Les véhicules de la famille.**
+
+- **Véhicules** : plaque, marque, modèle, version, énergie, kilométrage. Marque, modèle et version viennent
+  du catalogue ouvert de l’ADEME (voitures vendues neuves en France, gratuit) ; la version donne l’énergie
+  et la consommation officielle. Saisie libre pour les autres véhicules.
+- **Pleins** : un budget carburant mensuel par véhicule ; consommation réelle comparée à l’officielle.
+- **Entretiens** : chacun prévu avec son budget ; son coût réel enregistré une fois fait. Les entretiens
+  prévus (ou en retard) comptent dans le reste prévu fin du mois.
+- **Icône de l’application** : la tirelire du logo, blanche sur le bleu de l’application, dans l’onglet du
+  navigateur et sur l’écran d’accueil d’un téléphone (iPhone et Android).
+
+Mise à jour depuis 0.4.0 : rien à faire, la base est mise à jour au démarrage du conteneur. Le catalogue
+des modèles est demandé à l’ADEME (`data.ademe.fr`) : sans accès à Internet, les véhicules se décrivent à
+la main.
+
 ## 0.4.0 — 2026-10-30
 
 **Une image sans CVE connue.**

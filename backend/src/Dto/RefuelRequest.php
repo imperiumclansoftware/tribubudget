@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Dto;
+
+use Symfony\Component\Validator\Constraints as Assert;
+
+final readonly class RefuelRequest
+{
+    public function __construct(
+        #[Assert\NotNull(message: 'Choisissez le compte qui paie.')]
+        public ?int $accountId = null,
+        /** In cents */
+        #[Assert\Range(min: 1, max: Amount::MAX, notInRangeMessage: 'Indiquez le montant payé.')]
+        public int $amount = 0,
+        /** In hundredths of litre (or kWh) */
+        #[Assert\Range(min: 1, max: 100_000, notInRangeMessage: 'Indiquez la quantité mise.')]
+        public int $volume = 0,
+        /** Odometer at the fill-up, in km */
+        #[Assert\Range(min: 0, max: VehicleRequest::MAX_ODOMETER, notInRangeMessage: 'Ce kilométrage n’est pas valide.')]
+        public ?int $odometer = null,
+        #[Assert\NotBlank(message: 'Indiquez la date.')]
+        #[Assert\Date(message: 'Cette date n’est pas valide.')]
+        public string $date = '',
+    ) {
+    }
+}

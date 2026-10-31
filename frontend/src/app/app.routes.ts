@@ -70,6 +70,18 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/projects/projects.page').then((m) => m.ProjectsPage),
       },
       {
+        path: 'vehicules',
+        canActivate: [parentGuard],
+        title: 'Véhicules · TribuBudget',
+        loadComponent: () => import('./pages/vehicles/vehicles.page').then((m) => m.VehiclesPage),
+      },
+      {
+        path: 'vehicules/:vehicleId',
+        canActivate: [parentGuard],
+        title: 'Véhicule · TribuBudget',
+        loadComponent: () => import('./pages/vehicles/vehicle.page').then((m) => m.VehiclePage),
+      },
+      {
         path: 'famille',
         canActivate: [parentGuard],
         title: 'Famille · TribuBudget',

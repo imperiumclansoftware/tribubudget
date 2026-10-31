@@ -1,0 +1,104 @@
+<form class="form" [formGroup]="form" (ngSubmit)="save()">
+  <div class="form-row">
+    <label class="field">
+      <span>Nom</span>
+      <input formControlName="name" placeholder="Clio, le scooter…" />
+    </label>
+    <label class="field">
+      <span>Immatriculation</span>
+      <input formControlName="plate" placeholder="AB-123-CD" autocapitalize="characters" />
+    </label>
+  </div>
+
+  <div class="form-row">
+    <label class="field">
+      <span>Marque</span>
+      <input formControlName="make" list="vehicle-makes" autocomplete="off" />
+      <datalist id="vehicle-makes">
+        @for (make of makeOptions(); track make) {
+          <option [value]="make"></option>
+        }
+      </datalist>
+    </label>
+    <label class="field">
+      <span>Modèle</span>
+      <input formControlName="model" list="vehicle-models" autocomplete="off" />
+      <datalist id="vehicle-models">
+        @for (model of modelOptions(); track model) {
+          <option [value]="model"></option>
+        }
+      </datalist>
+    </label>
+  </div>
+  @if (versionOptions().length) {
+    <label class="field">
+      <span>Version</span>
+      <!-- By position: the same name exists in several energies -->
+      <select (change)="chooseVersion(+$any($event.target).value)">
+        <option value="-1">Je ne sais pas</option>
+        @for (v of versionOptions(); track $index) {
+          <option [value]="$index" [selected]="$index === chosenVersion()">
+            {{ v.label }} · {{ energyLabels[v.energy] }}
+          </option>
+        }
+      </select>
+      <small class="hint">Donne l’énergie et la consommation officielle.</small>
+    </label>
+  } @else {
+    <label class="field">
+      <span>Version (facultatif)</span>
+      <input formControlName="version" placeholder="1.0 TCe 90" />
+    </label>
+  }
+  <small class="hint muted">
+    @if (catalogDown()) {
+      Catalogue des modèles indisponible : saisissez la marque et le modèle.
+    } @else {
+      Marques et modèles des voitures vendues neuves en France (données ouvertes de l’ADEME) ; un
+      autre véhicule se saisit à la main.
+    }
+  </small>
+
+  <div class="form-row">
+    <label class="field">
+      <span>Énergie</span>
+      <select formControlName="energy">
+        @for (e of energies; track e[0]) {
+          <option [value]="e[0]">{{ e[1] }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span>1re immatriculation</span>
+      <input formControlName="firstRegistration" type="date" />
+    </label>
+  </div>
+
+  <div class="form-row">
+    <label class="field">
+      <span>Consommation officielle ({{ unit() }}/100 km)</span>
+      <input formControlName="officialConsumption" inputmode="decimal" placeholder="5,8" />
+    </label>
+    <label class="field">
+      <span>Kilométrage actuel</span>
+      <input formControlName="odometer" inputmode="numeric" placeholder="45 000" />
+    </label>
+  </div>
+
+  <label class="field">
+    <span>Budget carburant par mois (€)</span>
+    <input formControlName="fuelBudget" inputmode="decimal" placeholder="Aucun" />
+    <small class="hint"
+      >Les pleins sont notés dans sa catégorie « Carburant », avec ce budget.</small
+    >
+  </label>
+
+  @if (error(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+  <div class="actions">
+    <ng-content />
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="pending()">Enregistrer</button>
+  </div>
+</form>

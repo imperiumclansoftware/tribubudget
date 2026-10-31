@@ -21,6 +21,12 @@ class CategoryRepository extends ServiceEntityRepository
         return $this->findBy(['family' => $family], ['kind' => 'ASC', 'name' => 'ASC']);
     }
 
+    /** One of the categories the application relies on (Category::POCKET_MONEY…) */
+    public function withCode(Family $family, string $code): ?Category
+    {
+        return $this->findOneBy(['family' => $family, 'code' => $code]);
+    }
+
     public function pocketMoney(Family $family): ?Category
     {
         return $this->findOneBy(['family' => $family, 'code' => Category::POCKET_MONEY]);

@@ -19,6 +19,10 @@ import {
   Teen,
   Transfer,
   Frequency,
+  VehicleDetail,
+  Vehicle,
+  VehicleEnergy,
+  VehicleVersion,
   RequestKind,
 } from './api/models';
 
@@ -36,6 +40,19 @@ export interface RecurringOperationPayload extends Omit<OperationPayload, 'date'
   nextOn: string;
   endsOn: string | null;
   active: boolean;
+}
+
+export interface VehiclePayload {
+  name: string;
+  energy: VehicleEnergy;
+  plate: string | null;
+  make: string | null;
+  model: string | null;
+  version: string | null;
+  firstRegistration: string | null;
+  officialConsumption: number | null;
+  odometer: number | null;
+  fuelBudget: number | null;
 }
 
 export interface CategoryPayload {
@@ -311,5 +328,95 @@ export class BudgetApi {
 
   cancel(id: number): Observable<MoneyRequest> {
     return this.http.post<MoneyRequest>(`api/requests/${id}/cancel`, {});
+  }
+
+  // Vehicles
+
+  vehicles(): Observable<Vehicle[]> {
+    return this.http.get<Vehicle[]>('api/vehicles');
+  }
+
+  vehicle(id: number): Observable<VehicleDetail> {
+    return this.http.get<VehicleDetail>(`api/vehicles/${id}`);
+  }
+
+  saveVehicle(id: number | null, payload: VehiclePayload): Observable<VehicleDetail> {
+    return id === null
+      ? this.http.post<VehicleDetail>('api/vehicles', payload)
+      : this.http.put<VehicleDetail>(`api/vehicles/${id}`, payload);
+  }
+
+  deleteVehicle(id: number): Observable<void> {
+    return this.http.delete<void>(`api/vehicles/${id}`);
+  }
+
+  /** A new fill-up of the vehicle, or a change to the fill-up `refuelId` */
+  saveRefuel(
+    vehicleId: number,
+    refuelId: number | null,
+    payload: {
+      accountId: number;
+      amount: number;
+      volume: number;
+      odometer: number | null;
+      date: string;
+    },
+  ): Observable<VehicleDetail> {
+    return refuelId === null
+      ? this.http.post<VehicleDetail>(`api/vehicles/${vehicleId}/refuels`, payload)
+      : this.http.put<VehicleDetail>(`api/refuels/${refuelId}`, payload);
+  }
+
+  deleteRefuel(id: number): Observable<VehicleDetail> {
+    return this.http.delete<VehicleDetail>(`api/refuels/${id}`);
+  }
+
+  saveMaintenance(
+    vehicleId: number,
+    maintenanceId: number | null,
+    payload: { label: string; plannedOn: string; budget: number; plannedOdometer: number | null },
+  ): Observable<VehicleDetail> {
+    return maintenanceId === null
+      ? this.http.post<VehicleDetail>(`api/vehicles/${vehicleId}/maintenances`, payload)
+      : this.http.put<VehicleDetail>(`api/maintenances/${maintenanceId}`, payload);
+  }
+
+  deleteMaintenance(id: number): Observable<VehicleDetail> {
+    return this.http.delete<VehicleDetail>(`api/maintenances/${id}`);
+  }
+
+  /** Records its actual cost */
+  completeMaintenance(
+    id: number,
+    payload: { accountId: number; amount: number; date: string; odometer: number | null },
+  ): Observable<VehicleDetail> {
+    return this.http.put<VehicleDetail>(`api/maintenances/${id}/done`, payload);
+  }
+
+  /** Not done after all: its expense is deleted */
+  reopenMaintenance(id: number): Observable<VehicleDetail> {
+    return this.http.delete<VehicleDetail>(`api/maintenances/${id}/done`);
+  }
+
+  /** Cars sold new in France (ADEME): makes, the models of a make, the versions of a model */
+  vehicleCatalog(
+    make?: string,
+    model?: string,
+  ): Observable<{
+    makes?: string[];
+    models?: string[];
+    versions?: VehicleVersion[];
+  }> {
+    let params = new HttpParams();
+    if (make) {
+      params = params.set('make', make);
+    }
+    if (make && model) {
+      params = params.set('model', model);
+    }
+    return this.http.get<{ makes?: string[]; models?: string[]; versions?: VehicleVersion[] }>(
+      'api/vehicle-catalog',
+      { params },
+    );
   }
 }

@@ -69,6 +69,21 @@ font leurs demandes aux parents.
     d’épargne peut avoir un plancher. Un compte qui a des opérations ne peut pas être supprimé, un compte
     d’épargne qui porte des projets ne peut pas changer de type ; une catégorie supprimée laisse ses opérations sans
     catégorie.
+  - *Véhicules* (`App\Money\Garage`) : surnom, plaque, marque, modèle, version, énergie, 1re immatriculation,
+    kilométrage. Marque, modèle et version se choisissent dans le catalogue des voitures vendues neuves en
+    France (données ouvertes *Car Labelling* de l’ADEME, gratuites et sans clé, demandées par le serveur et
+    gardées un jour : `App\Api\VehicleCatalog`) ; la version donne l’énergie et la consommation officielle.
+    Hors catalogue, ou s’il est injoignable, tout se saisit à la main. Aucune information n’est cherchée
+    depuis la plaque : le fichier des immatriculations (SIV) n’est pas ouvert ; un lien mène à HistoVec.
+    - **Pleins** (montant, litres ou kWh, kilométrage) : chacun est une dépense de la catégorie
+      *Carburant · <véhicule>*, qui porte le **budget carburant mensuel** du véhicule. La consommation
+      réelle se calcule sur les pleins avec kilométrage. Le kilométrage retient le relevé le plus haut.
+    - **Entretiens** (révision, pneus…) : prévus à une date (et un kilométrage), chacun avec **son propre
+      budget**. *C’est fait* enregistre le coût réel comme dépense *Entretien véhicules* ; *Pas fait*
+      l’annule. Tant qu’il n’est pas fait, un entretien prévu d’ici la fin du mois (ou en retard) compte
+      dans le reste prévu.
+    - Supprimer un véhicule garde ses dépenses ; sa catégorie carburant disparaît, ou perd son budget si
+      elle a des dépenses.
   - *Famille* : ajout, renommage, nouveau code ou mot de passe, suppression d’un membre (pas soi-même).
 - **Comptes d’un ado** (*Mes comptes* pour l’ado, *Famille* puis *Voir les comptes* pour les parents) : à sa
   création, un ado reçoit un *Compte courant* et une *Épargne* à lui (`Account::owner`) ; les parents en

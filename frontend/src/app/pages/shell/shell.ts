@@ -44,7 +44,7 @@ export class Shell {
         { path: '/mon-compte', label: 'Mon code', icon: 'key' },
       ];
     }
-    // On phones, the accounts and the parent's own account are in the top bar
+    // On phones, the vehicles, the accounts and the parent's own account are in the top bar
     return [
       { path: '/tableau-de-bord', label: 'Tableau de bord', short: 'Accueil', icon: 'dashboard' },
       { path: '/operations', label: 'Opérations', short: 'Opérations', icon: 'list' },
@@ -52,6 +52,7 @@ export class Shell {
       { path: '/projets', label: 'Projets', icon: 'flag' },
       { path: '/famille', label: 'Famille', icon: 'users' },
       { path: '/demandes', label: 'Demandes', icon: 'inbox', badge: user.pendingRequests },
+      { path: '/vehicules', label: 'Véhicules', icon: 'car', desktopOnly: true },
       { path: '/comptes', label: 'Comptes', icon: 'wallet', desktopOnly: true },
     ];
   });

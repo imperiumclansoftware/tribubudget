@@ -1,4 +1,11 @@
-import { AccountType, Frequency, PocketMoneyKind, RequestKind, RequestStatus } from './api/models';
+import {
+  AccountType,
+  Frequency,
+  PocketMoneyKind,
+  RequestKind,
+  RequestStatus,
+  VehicleEnergy,
+} from './api/models';
 
 export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   checking: 'Compte courant',
@@ -33,3 +40,19 @@ export const REQUEST_STATUS_LABELS: Record<RequestStatus, string> = {
   rejected: 'Refusée',
   cancelled: 'Retirée',
 };
+
+export const VEHICLE_ENERGY_LABELS: Record<VehicleEnergy, string> = {
+  petrol: 'Essence',
+  diesel: 'Diesel',
+  hybrid: 'Hybride',
+  plugin_hybrid: 'Hybride rechargeable',
+  electric: 'Électrique',
+  lpg: 'GPL',
+  ethanol: 'Superéthanol (E85)',
+  other: 'Autre',
+};
+
+/** What a fill-up is measured in: kWh for an electric vehicle, litres otherwise */
+export function energyUnit(energy: VehicleEnergy): string {
+  return energy === 'electric' ? 'kWh' : 'L';
+}

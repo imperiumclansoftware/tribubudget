@@ -13,6 +13,8 @@ class Category implements FamilyOwned
     public const NAME_MAX_LENGTH = 40;
     /** Category of the allowances and advances paid to the children */
     public const POCKET_MONEY = 'pocket_money';
+    /** Category of the maintenance of the vehicles, done (see Garage) */
+    public const VEHICLE_MAINTENANCE = 'vehicle_maintenance';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

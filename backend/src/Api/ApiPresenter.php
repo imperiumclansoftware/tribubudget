@@ -6,13 +6,16 @@ use App\Entity\Account;
 use App\Entity\Allowance;
 use App\Entity\Category;
 use App\Entity\Family;
+use App\Entity\Maintenance;
 use App\Entity\MoneyRequest;
 use App\Entity\Operation;
 use App\Entity\PocketMoneyEntry;
 use App\Entity\RecurringOperation;
+use App\Entity\Refuel;
 use App\Entity\SavingsProject;
 use App\Entity\Transfer;
 use App\Entity\User;
+use App\Entity\Vehicle;
 
 /**
  * Turns entities into the JSON structures exposed by the API. Amounts are in cents.
@@ -250,6 +253,74 @@ final class ApiPresenter
             'decidedBy' => $request->getDecidedBy()?->getDisplayName(),
             'decidedAt' => $request->getDecidedAt()?->format(\DATE_ATOM),
             'answer' => $request->getAnswer(),
+        ];
+    }
+
+    /**
+     * A vehicle and where it stands: fuel spent this month against its budget, actual consumption,
+     * next maintenance. Consumptions in hundredths of litre (or kWh) per 100 km.
+     *
+     * @return array<string, mixed>
+     */
+    public function vehicle(Vehicle $vehicle, int $fuelSpent, ?int $consumption, ?Maintenance $next): array
+    {
+        return [
+            'id' => $vehicle->getId(),
+            'name' => $vehicle->getName(),
+            'energy' => $vehicle->getEnergy()->value,
+            'plate' => $vehicle->getPlate(),
+            'make' => $vehicle->getMake(),
+            'model' => $vehicle->getModel(),
+            'version' => $vehicle->getVersion(),
+            'firstRegistration' => $vehicle->getFirstRegistration()?->format('Y-m-d'),
+            'officialConsumption' => $vehicle->getOfficialConsumption(),
+            'consumption' => $consumption,
+            'odometer' => $vehicle->getOdometer(),
+            'odometerOn' => $vehicle->getOdometerOn()?->format('Y-m-d'),
+            'fuel' => null === $vehicle->getFuelCategory() ? null : [
+                'categoryId' => $vehicle->getFuelCategory()->getId(),
+                'budget' => $vehicle->getFuelCategory()->getMonthlyBudget(),
+                'spent' => $fuelSpent,
+            ],
+            'nextMaintenance' => null === $next ? null : $this->maintenance($next),
+        ];
+    }
+
+    /** @return array<string, mixed> amount positive; volume in hundredths of litre (or kWh) */
+    public function refuel(Refuel $refuel): array
+    {
+        $operation = $refuel->getOperation();
+
+        return [
+            'id' => $refuel->getId(),
+            'operationId' => $operation->getId(),
+            'accountId' => $operation->getAccount()->getId(),
+            'amount' => -$operation->getAmount(),
+            'volume' => $refuel->getVolume(),
+            'odometer' => $refuel->getOdometer(),
+            'date' => $operation->getDate()->format('Y-m-d'),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public function maintenance(Maintenance $maintenance): array
+    {
+        $operation = $maintenance->getOperation();
+
+        return [
+            'id' => $maintenance->getId(),
+            'vehicleId' => $maintenance->getVehicle()->getId(),
+            'label' => $maintenance->getLabel(),
+            'plannedOn' => $maintenance->getPlannedOn()->format('Y-m-d'),
+            'plannedOdometer' => $maintenance->getPlannedOdometer(),
+            'budget' => $maintenance->getBudget(),
+            // Once done: what it cost, when, from which account
+            'done' => null === $operation ? null : [
+                'operationId' => $operation->getId(),
+                'accountId' => $operation->getAccount()->getId(),
+                'amount' => -$operation->getAmount(),
+                'date' => $operation->getDate()->format('Y-m-d'),
+            ],
         ];
     }
 }

@@ -1,0 +1,352 @@
+<div class="page">
+  @if (vehicle(); as v) {
+    <header class="page-header">
+      <div>
+        <a class="back" routerLink="/vehicules"><app-icon name="left" [size]="16" /> Véhicules</a>
+        <h1>{{ v.name }}</h1>
+        <p class="subtitle">
+          {{ [v.make, v.version ?? v.model].join(' ').trim() || energies[v.energy] }}
+          @if (v.plate) {
+            · <span class="plate">{{ v.plate }}</span>
+          }
+        </p>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn" (click)="open('edit')">
+          <app-icon name="edit" /> Modifier
+        </button>
+        <button type="button" class="btn" (click)="openMaintenance()">
+          <app-icon name="wrench" /> Entretien
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="openRefuel()"
+          [disabled]="!accounts.value()?.length"
+        >
+          <app-icon name="fuel" /> Plein
+        </button>
+      </div>
+    </header>
+
+    @if (error() && !dialog()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+
+    <section class="tiles" aria-label="En bref">
+      <div class="card tile">
+        <span class="tile-label">Kilométrage</span>
+        <span class="tile-value">{{ v.odometer === null ? '—' : (v.odometer | km) }}</span>
+        @if (v.odometerOn) {
+          <span class="muted">relevé le {{ v.odometerOn | day }}</span>
+        }
+      </div>
+      <div class="card tile">
+        <span class="tile-label">Consommation réelle</span>
+        <span class="tile-value">
+          @if (v.consumption !== null) {
+            {{ v.consumption | consumption: unit() }}
+          } @else {
+            —
+          }
+        </span>
+        @if (v.officialConsumption !== null) {
+          <span class="muted">officielle : {{ v.officialConsumption | consumption: unit() }}</span>
+        } @else if (v.consumption === null) {
+          <span class="muted">après deux pleins avec le kilométrage</span>
+        }
+      </div>
+      <div class="card tile">
+        <span class="tile-label">Énergie</span>
+        <span class="tile-value">{{ energies[v.energy] }}</span>
+        @if (v.firstRegistration) {
+          <span class="muted">1re immatriculation le {{ v.firstRegistration | day }}</span>
+        }
+      </div>
+    </section>
+
+    <div class="columns">
+      <section class="card">
+        <div class="card-header">
+          <h2>Carburant</h2>
+        </div>
+        @if (v.fuel; as fuel) {
+          <app-budget-meter
+            name="Ce mois-ci"
+            color="#e76f51"
+            [spent]="fuel.spent"
+            [budget]="fuel.budget"
+          />
+          @if (fuel.budget === null) {
+            <p class="muted">
+              Pas de budget mensuel :
+              <button type="button" class="link" (click)="open('edit')">en fixer un</button>.
+            </p>
+          }
+        }
+        <h3 class="list-title">Pleins</h3>
+        <ul class="list">
+          @for (r of v.refuels; track r.id) {
+            <li>
+              <span class="kind" aria-hidden="true"><app-icon name="fuel" [size]="16" /></span>
+              <div class="grow">
+                <strong class="block"
+                  >{{ r.amount | euros }} · {{ r.volume | consumption: unit() : false }}</strong
+                >
+                <span class="muted block">
+                  {{ r.date | day }} · {{ unitPrice(r) | euros }}/{{ unit() }}
+                  @if (r.odometer !== null) {
+                    · {{ r.odometer | km }}
+                  }
+                </span>
+              </div>
+              <button
+                type="button"
+                class="btn btn-icon"
+                (click)="openRefuel(r)"
+                [attr.aria-label]="'Modifier le plein du ' + formatLongDay(r.date)"
+              >
+                <app-icon name="edit" [size]="18" />
+              </button>
+            </li>
+          } @empty {
+            <li class="empty">Aucun plein noté.</li>
+          }
+        </ul>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2>Entretiens</h2>
+          <button type="button" class="btn btn-small" (click)="openMaintenance()">
+            <app-icon name="plus" [size]="16" /> Prévoir
+          </button>
+        </div>
+        <ul class="list">
+          @for (m of due(); track m.id) {
+            <li>
+              <span class="kind" [class.overdue]="m.plannedOn < today" aria-hidden="true"
+                ><app-icon name="wrench" [size]="16"
+              /></span>
+              <div class="grow">
+                <strong class="block">{{ m.label }}</strong>
+                <span class="muted block">
+                  {{ formatLongDay(m.plannedOn) }}
+                  @if (m.plannedOdometer !== null) {
+                    ou {{ m.plannedOdometer | km }}
+                  }
+                  · budget {{ m.budget | euros }}
+                </span>
+                @if (m.plannedOn < today) {
+                  <span class="badge badge-warning">En retard</span>
+                }
+              </div>
+              <button type="button" class="btn btn-small btn-primary" (click)="openDone(m)">
+                C’est fait
+              </button>
+              <button
+                type="button"
+                class="btn btn-icon"
+                (click)="openMaintenance(m)"
+                [attr.aria-label]="'Modifier ' + m.label"
+              >
+                <app-icon name="edit" [size]="18" />
+              </button>
+            </li>
+          } @empty {
+            <li class="empty">Aucun entretien prévu.</li>
+          }
+        </ul>
+        @if (done().length) {
+          <h3 class="list-title">Faits</h3>
+          <ul class="list">
+            @for (m of done(); track m.id) {
+              <li>
+                <span class="kind in" aria-hidden="true"
+                  ><app-icon name="check" [size]="16"
+                /></span>
+                <div class="grow">
+                  <strong class="block">{{ m.label }}</strong>
+                  <span class="muted block">
+                    {{ m.done!.date | day }} · {{ m.done!.amount | euros }}
+                    @if (m.budget) {
+                      pour un budget de {{ m.budget | euros }}
+                    }
+                  </span>
+                  @if (m.budget && m.done!.amount > m.budget) {
+                    <span class="badge badge-negative"
+                      >Dépassé de {{ m.done!.amount - m.budget | euros }}</span
+                    >
+                  }
+                </div>
+                <button type="button" class="btn btn-small btn-ghost" (click)="reopen(m)">
+                  Pas fait
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </div>
+
+    <p class="muted histovec">
+      Historique officiel du véhicule (propriétaires, sinistres, contrôles techniques) :
+      <a href="https://histovec.interieur.gouv.fr/" target="_blank" rel="noopener">HistoVec</a>,
+      avec la carte grise.
+      <button type="button" class="link danger" (click)="remove()">Supprimer ce véhicule</button>
+    </p>
+  } @else if (loadError(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  } @else {
+    <p class="empty">Chargement…</p>
+  }
+</div>
+
+<app-modal heading="Modifier le véhicule" [open]="dialog() === 'edit'" (closed)="close()">
+  @if (dialog() === 'edit') {
+    <app-vehicle-form
+      [vehicle]="vehicle() ?? null"
+      (saved)="edited($event)"
+      (cancelled)="close()"
+    />
+  }
+</app-modal>
+
+<app-modal
+  [heading]="editingRefuel() ? 'Modifier le plein' : 'Nouveau plein'"
+  [open]="dialog() === 'refuel'"
+  (closed)="close()"
+>
+  <form class="form" [formGroup]="refuelForm" (ngSubmit)="saveRefuel()">
+    <div class="form-row">
+      <label class="field">
+        <span>Montant (€)</span>
+        <input formControlName="amount" inputmode="decimal" placeholder="65,40" />
+      </label>
+      <label class="field">
+        <span>Quantité ({{ unit() }})</span>
+        <input formControlName="volume" inputmode="decimal" placeholder="38,5" />
+      </label>
+    </div>
+    <div class="form-row">
+      <label class="field">
+        <span>Kilométrage</span>
+        <input formControlName="odometer" inputmode="numeric" placeholder="46 200" />
+      </label>
+      <label class="field">
+        <span>Date</span>
+        <input formControlName="date" type="date" [max]="today" />
+      </label>
+    </div>
+    <label class="field">
+      <span>Payé avec</span>
+      <select formControlName="accountId">
+        @for (a of accounts.value(); track a.id) {
+          <option [ngValue]="a.id">{{ a.name }}</option>
+        }
+      </select>
+      <small class="hint">Noté comme dépense « Carburant · {{ vehicle()?.name }} ».</small>
+    </label>
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+    <div class="actions">
+      @if (editingRefuel()) {
+        <button type="button" class="btn btn-ghost btn-danger" (click)="removeRefuel()">
+          <app-icon name="trash" [size]="18" /> Supprimer
+        </button>
+      }
+      <button type="button" class="btn" (click)="close()">Annuler</button>
+      <button type="submit" class="btn btn-primary" [disabled]="pending()">Enregistrer</button>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal
+  [heading]="editingMaintenance() ? 'Modifier l’entretien' : 'Prévoir un entretien'"
+  [open]="dialog() === 'maintenance'"
+  (closed)="close()"
+>
+  <form class="form" [formGroup]="maintenanceForm" (ngSubmit)="saveMaintenance()">
+    <label class="field">
+      <span>Entretien</span>
+      <input formControlName="label" list="maintenance-labels" placeholder="Révision, pneus…" />
+      <datalist id="maintenance-labels">
+        @for (label of maintenanceLabels; track label) {
+          <option [value]="label"></option>
+        }
+      </datalist>
+    </label>
+    <div class="form-row">
+      <label class="field">
+        <span>Prévu le</span>
+        <input formControlName="plannedOn" type="date" />
+      </label>
+      <label class="field">
+        <span>Ou à (km, facultatif)</span>
+        <input formControlName="plannedOdometer" inputmode="numeric" placeholder="60 000" />
+      </label>
+    </div>
+    <label class="field">
+      <span>Budget (€)</span>
+      <input formControlName="budget" inputmode="decimal" placeholder="250" />
+      <small class="hint"
+        >Un budget pour cet entretien seulement : il compte dans le reste prévu du mois où il est
+        prévu, jusqu’à ce qu’il soit fait.</small
+      >
+    </label>
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+    <div class="actions">
+      @if (editingMaintenance()) {
+        <button type="button" class="btn btn-ghost btn-danger" (click)="removeMaintenance()">
+          <app-icon name="trash" [size]="18" /> Supprimer
+        </button>
+      }
+      <button type="button" class="btn" (click)="close()">Annuler</button>
+      <button type="submit" class="btn btn-primary" [disabled]="pending()">Enregistrer</button>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal
+  [heading]="(editingMaintenance()?.label ?? '') + ' : c’est fait'"
+  [open]="dialog() === 'done'"
+  (closed)="close()"
+>
+  <form class="form" [formGroup]="doneForm" (ngSubmit)="saveDone()">
+    <div class="form-row">
+      <label class="field">
+        <span>Ce qu’il a coûté (€)</span>
+        <input formControlName="amount" inputmode="decimal" />
+      </label>
+      <label class="field">
+        <span>Date</span>
+        <input formControlName="date" type="date" [max]="today" />
+      </label>
+    </div>
+    <div class="form-row">
+      <label class="field">
+        <span>Kilométrage (facultatif)</span>
+        <input formControlName="odometer" inputmode="numeric" />
+      </label>
+      <label class="field">
+        <span>Payé avec</span>
+        <select formControlName="accountId">
+          @for (a of accounts.value(); track a.id) {
+            <option [ngValue]="a.id">{{ a.name }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <small class="hint muted">Noté comme dépense « Entretien véhicules ».</small>
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="btn" (click)="close()">Annuler</button>
+      <button type="submit" class="btn btn-primary" [disabled]="pending()">Enregistrer</button>
+    </div>
+  </form>
+</app-modal>

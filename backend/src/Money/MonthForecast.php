@@ -7,6 +7,7 @@ use App\Entity\Family;
 use App\Enum\CategoryKind;
 use App\Repository\AllowanceRepository;
 use App\Repository\CategoryRepository;
+use App\Repository\MaintenanceRepository;
 use App\Repository\OperationRepository;
 use App\Repository\RecurringOperationRepository;
 
@@ -18,7 +19,8 @@ use App\Repository\RecurringOperationRepository;
  * to come; a category with a budget counts at least its budget, which covers its recurring
  * operations (a rent in a budgeted "Housing" is not counted twice). The pocket money category also
  * counts the allowances still to pay. Transfers and the teenagers' accounts stay out, as in the
- * other figures of the household budget.
+ * other figures of the household budget. The vehicle maintenance still to do by the end of the
+ * month, overdue included, counts its own budget.
  */
 final class MonthForecast
 {
@@ -27,13 +29,14 @@ final class MonthForecast
         private readonly RecurringOperationRepository $recurring,
         private readonly AllowanceRepository $allowances,
         private readonly CategoryRepository $categories,
+        private readonly MaintenanceRepository $maintenances,
     ) {
     }
 
     /**
      * Once the schedules have caught up (Schedules), whatever falls due from now on is still to come.
      *
-     * @return array{income: int, recurring: int, budgets: int, pocketMoney: int, other: int, remaining: int} expenses as positive amounts
+     * @return array{income: int, recurring: int, budgets: int, pocketMoney: int, maintenance: int, other: int, remaining: int} expenses as positive amounts
      */
     public function forecast(Family $family, Month $month): array
     {
@@ -89,7 +92,8 @@ final class MonthForecast
             $allowances += $member->isTeen() ? $due - min($member->getAdvanceOwed(), $due) : $due;
         }
 
-        $forecast = ['income' => $income, 'recurring' => 0, 'budgets' => 0, 'pocketMoney' => $allowances, 'other' => 0];
+        $maintenance = array_sum(array_map(static fn ($m) => $m->getBudget(), $this->maintenances->dueBefore($family, $end)));
+        $forecast = ['income' => $income, 'recurring' => 0, 'budgets' => 0, 'pocketMoney' => $allowances, 'maintenance' => $maintenance, 'other' => 0];
         foreach ($lines as $l) {
             $category = $l['category'];
             if (Category::POCKET_MONEY === $category?->getCode()) {
@@ -102,7 +106,7 @@ final class MonthForecast
             }
         }
 
-        return $forecast + ['remaining' => $income - $forecast['recurring'] - $forecast['budgets'] - $forecast['pocketMoney'] - $forecast['other']];
+        return $forecast + ['remaining' => $income - $forecast['recurring'] - $forecast['budgets'] - $forecast['pocketMoney'] - $forecast['maintenance'] - $forecast['other']];
     }
 
     /** An income category, or money coming in without a category */

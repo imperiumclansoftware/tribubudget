@@ -57,6 +57,7 @@ final class ForecastTest extends ApiTestCase
             'recurring' => 1500,
             'budgets' => 100000 + 50000 + 8000,
             'pocketMoney' => 1000 + 2000,
+            'maintenance' => 0,
             'other' => 5000,
             'remaining' => 310000 - 1500 - 158000 - 3000 - 5000,
         ], $this->api('GET', '/api/dashboard?month=2026-10', $this->parent)['forecast']);

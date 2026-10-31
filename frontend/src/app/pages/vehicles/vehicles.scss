@@ -1,0 +1,200 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-bottom: 0.35rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.block {
+  display: block;
+}
+
+/* A registration plate, as on the car */
+.plate {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--border-color);
+  border-left: 6px solid #1e40af;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+/* The list: one card per vehicle */
+.vehicles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.vehicle {
+  display: grid;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    border-color: var(--primary);
+  }
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+}
+
+.vehicle-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vehicle-icon,
+.kind {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+
+.kind {
+  width: 2.2rem;
+  height: 2.2rem;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+
+  &.in {
+    background: var(--success-bg);
+    color: var(--success-text);
+  }
+  &.overdue {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+  }
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+
+  dt {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+  dd {
+    margin: 0;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.next {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-secondary);
+
+  &.overdue {
+    color: var(--warning-text);
+    font-weight: 600;
+  }
+}
+
+/* A vehicle: three figures, then the fuel and the maintenance */
+.tiles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.tile {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+
+  .tile-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .tile-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.list-title {
+  margin: 16px 0 4px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.list .grow > .badge {
+  margin-top: 4px;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &.danger {
+    display: block;
+    margin-top: 12px;
+    color: var(--danger-text);
+  }
+}
+
+.histovec {
+  font-size: 0.9rem;
+}
+
+@media (min-width: 600px) {
+  .tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .vehicles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .vehicles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

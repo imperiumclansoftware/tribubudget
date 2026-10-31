@@ -11,6 +11,15 @@
     @if (auth.isParent()) {
       <a
         class="btn btn-icon accounts"
+        routerLink="/vehicules"
+        routerLinkActive="current"
+        aria-label="Véhicules"
+        title="Véhicules"
+      >
+        <app-icon name="car" />
+      </a>
+      <a
+        class="btn btn-icon accounts"
         routerLink="/comptes"
         routerLinkActive="current"
         aria-label="Comptes et catégories"

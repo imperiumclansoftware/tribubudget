@@ -82,6 +82,12 @@
                 <dt>Argent de poche</dt>
                 <dd class="amount">{{ -f.pocketMoney | euros: true }}</dd>
               </div>
+              @if (f.maintenance) {
+                <div>
+                  <dt><a routerLink="/vehicules">Entretiens de véhicules prévus</a></dt>
+                  <dd class="amount">{{ -f.maintenance | euros: true }}</dd>
+                </div>
+              }
               <div>
                 <dt>Autres dépenses du mois</dt>
                 <dd class="amount">{{ -f.other | euros: true }}</dd>

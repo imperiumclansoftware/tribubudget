@@ -13,6 +13,8 @@ français :
 - **Budgets mensuels** par catégorie, dépassements signalés
 - **Projets d’épargne** financés par ordre de priorité, au-dessus d’un plancher
 - **Argent de poche automatique**, avances remboursées sur les versements suivants
+- **Véhicules** : pleins avec un budget carburant mensuel par véhicule et la consommation réelle,
+  entretiens prévus chacun avec son budget, kilométrage ; marques et modèles du catalogue ouvert de l’ADEME
 - **Tableau de bord** : solde, mois en cours, reste prévu fin du mois, six derniers mois, projets réalisables, prochaines échéances
 - Interface pensée pour le téléphone, jusqu’à l’écran large ; thème clair ou sombre selon le système
 
@@ -27,6 +29,7 @@ base sont créés au premier lancement.
 | Tag | Contenu |
 |---|---|
 | `latest` | Dernière version publiée |
+| `0.5.0` | Véhicules : pleins avec budget carburant mensuel, entretiens avec leur budget, kilométrage, catalogue des modèles (ADEME) ; icône de l’application |
 | `0.4.0` | Serveur web nginx + PHP-FPM au lieu de FrankenPHP : aucune CVE connue dans l’image |
 | `0.3.1` | Correctifs de sécurité d’Alpine (`curl` 8.23.0) |
 | `0.3.0` | Profil ado avec ses propres comptes et demandes de remboursement, pointage des opérations, reste prévu fin du mois |

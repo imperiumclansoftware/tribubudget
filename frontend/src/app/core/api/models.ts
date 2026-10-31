@@ -8,6 +8,8 @@ export type AllowanceFrequency = Extract<Frequency, 'weekly' | 'monthly'>;
 export type PocketMoneyKind = 'allowance' | 'expense' | 'advance' | 'repayment' | 'adjustment';
 export type RequestKind = 'advance' | 'purchase' | 'reimbursement';
 export type RequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+export type VehicleEnergy =
+  'petrol' | 'diesel' | 'hybrid' | 'plugin_hybrid' | 'electric' | 'lpg' | 'ethanol' | 'other';
 
 export interface Member {
   id: number;
@@ -206,10 +208,67 @@ export interface Dashboard {
     budgets: number;
     /** Allowances still to pay, and what was given already */
     pocketMoney: number;
+    /** Vehicle maintenance still to do by the end of the month, overdue included: their budgets */
+    maintenance: number;
     /** One-off expenses outside the budgets */
     other: number;
     remaining: number;
   } | null;
+}
+
+export interface Maintenance {
+  id: number;
+  vehicleId: number;
+  label: string;
+  plannedOn: string;
+  plannedOdometer: number | null;
+  budget: number;
+  /** Once done: what it cost, from which account */
+  done: { operationId: number; accountId: number; amount: number; date: string } | null;
+}
+
+/** Consumptions in hundredths of litre (or kWh when electric) per 100 km */
+export interface Vehicle {
+  id: number;
+  name: string;
+  energy: VehicleEnergy;
+  plate: string | null;
+  make: string | null;
+  model: string | null;
+  version: string | null;
+  firstRegistration: string | null;
+  officialConsumption: number | null;
+  /** From the fill-ups */
+  consumption: number | null;
+  odometer: number | null;
+  odometerOn: string | null;
+  /** Its fuel category: monthly budget, spent this month */
+  fuel: { categoryId: number; budget: number | null; spent: number } | null;
+  nextMaintenance: Maintenance | null;
+}
+
+export interface Refuel {
+  id: number;
+  operationId: number;
+  accountId: number;
+  /** Positive */
+  amount: number;
+  /** Hundredths of litre (or kWh) */
+  volume: number;
+  odometer: number | null;
+  date: string;
+}
+
+export interface VehicleDetail extends Vehicle {
+  refuels: Refuel[];
+  /** To do first, by date; then done */
+  maintenances: Maintenance[];
+}
+
+export interface VehicleVersion {
+  label: string;
+  energy: VehicleEnergy;
+  consumption: number | null;
 }
 
 export interface ApiProblem {

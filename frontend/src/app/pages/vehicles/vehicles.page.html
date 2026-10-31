@@ -1,0 +1,86 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>Véhicules</h1>
+      <p class="subtitle">Carburant, entretiens et kilométrage des véhicules de la famille</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="adding.set(true)">
+      <app-icon name="plus" /> Ajouter un véhicule
+    </button>
+  </header>
+
+  @if (loadError(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+
+  <div class="vehicles">
+    @for (v of vehicles.value(); track v.id) {
+      <a class="card vehicle" [routerLink]="['/vehicules', v.id]">
+        <div class="vehicle-head">
+          <span class="vehicle-icon" aria-hidden="true"><app-icon name="car" /></span>
+          <div class="grow">
+            <h2 class="ellipsis">{{ v.name }}</h2>
+            <span class="muted ellipsis block">
+              {{ [v.make, v.model].join(' ').trim() || energies[v.energy] }}
+            </span>
+          </div>
+          @if (v.plate) {
+            <span class="plate">{{ v.plate }}</span>
+          }
+        </div>
+
+        @if (v.fuel; as fuel) {
+          <app-budget-meter
+            name="Carburant ce mois"
+            color="#e76f51"
+            [spent]="fuel.spent"
+            [budget]="fuel.budget"
+          />
+        }
+
+        <dl class="facts">
+          <div>
+            <dt>Kilométrage</dt>
+            <dd>{{ v.odometer === null ? '—' : (v.odometer | km) }}</dd>
+          </div>
+          <div>
+            <dt>Consommation</dt>
+            <dd>
+              @if (v.consumption !== null) {
+                {{ v.consumption | consumption: energyUnit(v.energy) }}
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+        </dl>
+
+        @if (v.nextMaintenance; as m) {
+          <p class="next" [class.overdue]="m.plannedOn < today">
+            <app-icon name="wrench" [size]="16" />
+            <span class="grow"
+              >{{ m.label }} · {{ formatLongDay(m.plannedOn) }} · {{ m.budget | euros }}</span
+            >
+          </p>
+        }
+      </a>
+    } @empty {
+      @if (vehicles.value()) {
+        <div class="card empty">
+          <p>Aucun véhicule pour l’instant.</p>
+          <button type="button" class="btn" (click)="adding.set(true)">
+            <app-icon name="plus" /> Ajouter le premier
+          </button>
+        </div>
+      } @else {
+        <p class="empty">Chargement…</p>
+      }
+    }
+  </div>
+</div>
+
+<app-modal heading="Nouveau véhicule" [open]="adding()" (closed)="adding.set(false)">
+  @if (adding()) {
+    <app-vehicle-form (saved)="added($event)" (cancelled)="adding.set(false)" />
+  }
+</app-modal>
