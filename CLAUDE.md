@@ -83,8 +83,11 @@ as `www-data`). On SIGTERM it stops everything and shuts PostgreSQL down cleanly
   them at one million euros.
 - **Errors**: controllers throw HTTP exceptions with a French, user-facing message;
   `EventListener\ApiErrorListener` turns them into `{status, detail}` problem+json in every environment
-  (otherwise prod would hide the message). Validation errors keep Symfony's `violations` format. The
-  frontend's `apiErrorMessage()` reads both.
+  (otherwise prod would hide the message), except Symfony's own technical messages (unknown route, entity
+  not found, missing role). It runs at priority -64, after the firewall has turned the
+  `#[IsGranted(message: …)]` denials into HTTP exceptions; `tests/Api/ApiErrorTest.php` checks it with a
+  non-debug kernel. Validation errors keep Symfony's `violations` format. The frontend's
+  `apiErrorMessage()` reads both.
 - **Security** (`config/packages/security.yaml`): stateless JWT (LexikJWT), `json_login` on `/api/login`
   with `login_throttling` (5 tries / 15 min, children log in with a short PIN). Only `/api/login`,
   `/api/health` and `/api/setup(/verify)` are public. Roles: `ROLE_PARENT` and `ROLE_TEEN` both inherit

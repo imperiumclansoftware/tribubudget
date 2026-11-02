@@ -1,5 +1,16 @@
 # Journal des versions
 
+## 0.5.1 — 2026-11-02
+
+**Des messages d’erreur lisibles.**
+
+- Les refus d’accès s’affichent en clair (« Seuls les parents ont accès aux comptes. », « Seuls les parents
+  gèrent les catégories. »…) : l’application montrait « Forbidden » à leur place.
+- Les messages techniques du serveur (adresse inconnue, élément introuvable), en anglais, ne s’affichent
+  plus : un message générique les remplace.
+
+Mise à jour depuis 0.5.0 : rien à faire.
+
 ## 0.5.0 — 2026-10-31
 
 **Les véhicules de la famille.**

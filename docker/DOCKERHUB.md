@@ -29,6 +29,7 @@ base sont créés au premier lancement.
 | Tag | Contenu |
 |---|---|
 | `latest` | Dernière version publiée |
+| `0.5.1` | Refus d’accès affichés en clair (« Seuls les parents ont accès aux comptes. ») au lieu de « Forbidden » ; messages techniques du serveur masqués |
 | `0.5.0` | Véhicules : pleins avec budget carburant mensuel, entretiens avec leur budget, kilométrage, catalogue des modèles (ADEME) ; icône de l’application |
 | `0.4.0` | Serveur web nginx + PHP-FPM au lieu de FrankenPHP : aucune CVE connue dans l’image |
 | `0.3.1` | Correctifs de sécurité d’Alpine (`curl` 8.23.0) |
