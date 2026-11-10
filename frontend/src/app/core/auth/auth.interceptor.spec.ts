@@ -48,7 +48,9 @@ describe('session authentication', () => {
     const api = backend.expectOne('api/accounts');
     expect(api.request.withCredentials).toBe(true);
     expect(api.request.headers.has('Authorization')).toBe(false);
-    expect(backend.expectOne('https://autre-site.example/data').request.withCredentials).toBe(false);
+    expect(backend.expectOne('https://autre-site.example/data').request.withCredentials).toBe(
+      false,
+    );
     api.flush([]);
   });
 
