@@ -1,5 +1,17 @@
 # Journal des versions
 
+## 0.6.1 — 2026-11-10
+
+**Correctifs de sécurité de l’image.**
+
+- SQLite 3.54.1 dans l’image Docker : corrige trois failles de gravité haute de la bibliothèque
+  (CVE-2026-119373, CVE-2026-119374, CVE-2026-119379), qu’Alpine 3.24 n’a pas encore publiées. TribuBudget
+  n’utilise pas SQLite (PostgreSQL), mais PHP en dépend.
+- CVE-2026-119586 reste signalée par certains scanners : elle touche l’outil en ligne de commande `sqlite3`,
+  absent de l’image, et n’a pas encore de correctif.
+
+Mise à jour depuis 0.6.0 : rien à faire.
+
 ## 0.6.0 — 2026-11-10
 
 **Une connexion plus sûre.**

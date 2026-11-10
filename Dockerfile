@@ -45,6 +45,19 @@ RUN install-php-extensions pdo_pgsql intl zip opcache \
     && apk add --no-cache nginx curl tini su-exec openssl postgresql16 postgresql16-client \
     && mkdir -p /run/postgresql && chown postgres:postgres /run/postgresql \
     && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+# SQLite: the official PHP image links PHP to libsqlite3 (TribuBudget only uses PostgreSQL). Alpine 3.24
+# still ships sqlite-libs 3.53.4 (CVE-2026-119373, CVE-2026-119374, CVE-2026-119379: heap overflows,
+# fixed in 3.54.0): until it publishes the fix, this one library comes from Alpine edge. The step
+# expires by itself: once Alpine 3.24 has >= 3.54.0, a rebuild with --pull keeps the official package.
+ARG SQLITE_MIN_VERSION=3.54.0
+RUN installed="$(apk info -e -v sqlite-libs | sed 's/^sqlite-libs-//; s/-r[0-9]*$//')" \
+    && if [ "$(apk version -t "$installed" "$SQLITE_MIN_VERSION")" = '<' ]; then \
+        apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main "sqlite-libs>=$SQLITE_MIN_VERSION"; \
+    fi \
+    && apk info -e -v sqlite-libs \
+    && php -r 'new PDO("sqlite::memory:");' \
+    && php -m | grep -qx pdo_pgsql
 COPY docker/php.ini $PHP_INI_DIR/conf.d/zz-tribubudget.ini
 COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-tribubudget.conf
 COPY docker/nginx.conf /etc/nginx/nginx.conf
