@@ -2,7 +2,7 @@
 # Starts TribuBudget, all in one (run as root by tini):
 #  1. the secrets, created at the first start in /data/secrets unless given as variables;
 #  2. the database: the embedded PostgreSQL (/data/postgres), unless DATABASE_URL is given;
-#  3. migrations, JWT keys and installation code, then the scheduler and the web server, the
+#  3. migrations and installation code, then the scheduler and the web server, the
 #     scheduler and the web workers as www-data. On stop, the services end and PostgreSQL shuts down cleanly.
 # Any other command (e.g. tribubudget-scheduler next to an external database) is run as www-data.
 set -e
@@ -11,7 +11,7 @@ DATA=/data
 PGDATA="$DATA/postgres"
 PG_MAJOR=16
 
-mkdir -p "$DATA/secrets" "$DATA/jwt" "$DATA/setup"
+mkdir -p "$DATA/secrets" "$DATA/setup"
 chmod 700 "$DATA/secrets"
 
 # A secret: the variable if given, otherwise the one generated at the first start
@@ -26,8 +26,7 @@ secret() {
 }
 
 APP_SECRET="${APP_SECRET:-$(secret app_secret)}"
-JWT_PASSPHRASE="${JWT_PASSPHRASE:-$(secret jwt_passphrase)}"
-export APP_SECRET JWT_PASSPHRASE
+export APP_SECRET
 
 embedded_database=false
 if [ -z "${DATABASE_URL:-}" ]; then
@@ -48,13 +47,12 @@ esac
 umask 027
 {
 	echo "APP_SECRET=$APP_SECRET"
-	echo "JWT_PASSPHRASE=$JWT_PASSPHRASE"
 	echo "DATABASE_URL=\"$DATABASE_URL\""
 	echo "LOCK_DSN=\"$LOCK_DSN\""
 } > /app/.env.local
 umask 022
 chown root:www-data /app/.env.local
-chown -R www-data:www-data "$DATA/jwt" "$DATA/setup"
+chown -R www-data:www-data "$DATA/setup"
 
 as_app() {
 	su-exec www-data "$@"
@@ -123,7 +121,6 @@ if $embedded_database; then
 fi
 wait_for_database
 as_app php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
-as_app php bin/console lexik:jwt:generate-keypair --skip-if-exists
 # Until the family is created: the code asked by the installation page
 as_app php bin/console app:setup:code
 

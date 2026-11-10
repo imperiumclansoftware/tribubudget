@@ -1,5 +1,26 @@
 # Journal des versions
 
+## 0.6.0 — 2026-11-10
+
+**Une connexion plus sûre.**
+
+- **Session au lieu de jeton** : la connexion tient dans un cookie que les scripts de la page ne peuvent pas
+  lire, et plus rien n’est gardé dans le navigateur. Se déconnecter ferme vraiment la session, et changer un
+  mot de passe déconnecte les autres appareils du membre. On reste connecté 7 jours, comme avant.
+- **Mots de passe** des parents et des ados : 12 caractères au moins, pas trop faciles à deviner, et refusés
+  s’ils figurent dans des fuites de données connues. Les mots de passe actuels restent valables ; la règle
+  s’applique au prochain changement. Les enfants gardent leur code de 4 à 12 chiffres.
+- **Mot de passe oublié par le seul parent** : `docker exec -it tribubudget console app:user:reset-password
+  <identifiant>`.
+- **Journal de sécurité** (`docker logs`) : connexions réussies ou ratées, refus d’accès, membres créés ou
+  supprimés, mots de passe changés, avec l’adresse IP.
+- **En-têtes de sécurité** : politique de contenu stricte, HSTS quand l’application est servie en HTTPS.
+- **Virements** : le choix des comptes renvoyait « This value should be of type int|null » ; corrigé.
+
+Mise à jour depuis 0.5.x : chaque membre se reconnecte une fois. Derrière un reverse proxy HTTPS sur une
+adresse publique, indiquez-la dans `TRUSTED_PROXIES` (`docker/DOCKERHUB.md`). La variable `JWT_PASSPHRASE` et
+le dossier `/data/jwt` ne servent plus.
+
 ## 0.5.1 — 2026-11-02
 
 **Des messages d’erreur lisibles.**

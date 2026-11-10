@@ -218,16 +218,28 @@
     <div class="form-row">
       <label class="field">
         <span>Depuis</span>
+        <!-- Options written inside the <select>: an <option> declared in an ng-template
+             elsewhere does not find its <select>, ignores [ngValue] and sends its text -->
         <select formControlName="fromAccountId">
-          <ng-container *ngTemplateOutlet="transferOptions; context: { disabled: 0 }" />
+          @for (group of transferGroups(); track group.label) {
+            <optgroup [label]="group.label">
+              @for (a of group.accounts; track a.id) {
+                <option [ngValue]="a.id">{{ a.name }}</option>
+              }
+            </optgroup>
+          }
         </select>
       </label>
       <label class="field">
         <span>Vers</span>
         <select formControlName="toAccountId">
-          <ng-container
-            *ngTemplateOutlet="transferOptions; context: { disabled: transferFrom() }"
-          />
+          @for (group of transferGroups(); track group.label) {
+            <optgroup [label]="group.label">
+              @for (a of group.accounts; track a.id) {
+                <option [ngValue]="a.id" [disabled]="a.id === transferFrom()">{{ a.name }}</option>
+              }
+            </optgroup>
+          }
         </select>
       </label>
     </div>
@@ -274,17 +286,3 @@
 </app-modal>
 
 <!-- The household's accounts, then each teenager's: money given to them is no expense -->
-<ng-template #transferOptions let-disabled="disabled">
-  <optgroup label="Comptes du foyer">
-    @for (a of accounts(); track a.id) {
-      <option [ngValue]="a.id" [disabled]="a.id === disabled">{{ a.name }}</option>
-    }
-  </optgroup>
-  @for (group of teenAccounts(); track group.name) {
-    <optgroup [label]="'Comptes de ' + group.name">
-      @for (a of group.accounts; track a.id) {
-        <option [ngValue]="a.id" [disabled]="a.id === disabled">{{ a.name }}</option>
-      }
-    </optgroup>
-  }
-</ng-template>

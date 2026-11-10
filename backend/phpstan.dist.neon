@@ -1,5 +1,10 @@
+includes:
+    # Errors of the code written before level max (0.6.0): to fix little by little, never to add to
+    - phpstan-baseline.neon
+
 parameters:
-    level: 6
+    # Guidelines: PHPStan level max, with phpstan-symfony and phpstan-doctrine (extension-installer)
+    level: max
     paths:
         - src
     symfony:

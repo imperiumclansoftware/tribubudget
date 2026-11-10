@@ -5,19 +5,26 @@ namespace App\Tests;
 use App\Entity\Family;
 use App\Entity\User;
 use App\Enum\FamilyRole;
+use App\EventSubscriber\CsrfDoubleSubmitSubscriber;
 use App\Money\FamilySetup;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\BrowserKit\Cookie;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
  * Functional tests of the API: a fresh database for each test, and helpers to create a family
  * and talk to the API as one of its members.
+ *
+ * A "token" here is the id of the member's session: login() returns it, api() sends it as the
+ * session cookie, with the CSRF cookie and header, so that one test can talk as several members.
  */
 abstract class ApiTestCase extends WebTestCase
 {
+    protected const XSRF = 'test-xsrf-token';
+
     private static bool $schemaCreated = false;
 
     protected KernelBrowser $client;
@@ -25,6 +32,8 @@ abstract class ApiTestCase extends WebTestCase
     protected function setUp(): void
     {
         $this->client = static::createClient();
+        // Failed sign-ins of a previous test must not slow this one down (login_throttling)
+        static::getContainer()->get('cache.rate_limiter')->clear();
         $em = static::getContainer()->get(EntityManagerInterface::class);
         if (!self::$schemaCreated) {
             $schema = new SchemaTool($em);
@@ -72,7 +81,7 @@ abstract class ApiTestCase extends WebTestCase
     }
 
     /** Adds a teenager to the parent's family; returns [teen id, teen token]. */
-    protected function addTeen(string $parentToken, string $username = 'hugo', string $password = 'secret-hugo'): array
+    protected function addTeen(string $parentToken, string $username = 'hugo', string $password = 'Velo-rouge-du-dimanche'): array
     {
         $teen = $this->api('POST', '/api/members', $parentToken, [
             'displayName' => ucfirst($username),
@@ -85,25 +94,44 @@ abstract class ApiTestCase extends WebTestCase
         return [$teen['id'], $this->login($username, $password)];
     }
 
+    /** Signs in; returns the id of the new session. */
     protected function login(string $username, string $password): string
     {
-        $response = $this->api('POST', '/api/login', null, ['username' => $username, 'password' => $password]);
+        $this->api('POST', '/api/login', null, ['username' => $username, 'password' => $password]);
         self::assertResponseIsSuccessful();
+        $session = $this->client->getCookieJar()->get($this->sessionCookie());
+        self::assertNotNull($session, 'Signing in must set the session cookie.');
 
-        return $response['token'];
+        return $session->getValue();
     }
 
-    /** @return array<mixed>|null decoded JSON response */
-    protected function api(string $method, string $uri, ?string $token, ?array $body = null): ?array
+    /**
+     * @param string|null $token session id from login(), null for an anonymous request
+     *
+     * @return array<mixed>|null decoded JSON response
+     */
+    protected function api(string $method, string $uri, ?string $token, ?array $body = null, bool $csrf = true): ?array
     {
-        $server = ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'];
+        $jar = $this->client->getCookieJar();
+        $jar->clear();
         if (null !== $token) {
-            $server['HTTP_AUTHORIZATION'] = 'Bearer '.$token;
+            $jar->set(new Cookie($this->sessionCookie(), $token));
+        }
+        $server = ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'];
+        if ($csrf) {
+            $jar->set(new Cookie(CsrfDoubleSubmitSubscriber::COOKIE, self::XSRF));
+            $server['HTTP_X_XSRF_TOKEN'] = self::XSRF;
         }
         $this->client->request($method, $uri, server: $server, content: null === $body ? null : json_encode($body));
         $content = $this->client->getResponse()->getContent();
 
         return '' === $content ? null : json_decode($content, true);
+    }
+
+    /** Name of the session cookie (TRIBUBUDGET_SID, but the test session storage has its own) */
+    protected function sessionCookie(): string
+    {
+        return static::getContainer()->get('session.factory')->createSession()->getName();
     }
 
     protected function firstAccountId(string $parentToken): int

@@ -27,7 +27,7 @@ final class MemberTest extends ApiTestCase
     {
         $parent = $this->registerFamily('maman');
 
-        $response = $this->api('POST', '/api/members', $parent, ['displayName' => 'Autre', 'username' => 'MAMAN', 'role' => 'parent', 'password' => 'motdepasse']);
+        $response = $this->api('POST', '/api/members', $parent, ['displayName' => 'Autre', 'username' => 'MAMAN', 'role' => 'parent', 'password' => 'Velo-rouge-du-dimanche']);
         self::assertResponseStatusCodeSame(422);
         self::assertSame('Cet identifiant est déjà pris.', $response['detail']);
     }

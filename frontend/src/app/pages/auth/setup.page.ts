@@ -31,7 +31,7 @@ export class SetupPage {
     familyName: ['', Validators.required],
     displayName: ['', Validators.required],
     username: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9._-]{3,40}$/)]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', [Validators.required, Validators.minLength(12)]],
   });
 
   protected async verify(): Promise<void> {
@@ -49,7 +49,7 @@ export class SetupPage {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.error.set(
-        'Remplissez tous les champs : identifiant de 3 caractères ou plus, mot de passe de 8 caractères ou plus.',
+        'Remplissez tous les champs : identifiant de 3 caractères ou plus, mot de passe de 12 caractères ou plus.',
       );
       return;
     }

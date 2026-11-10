@@ -21,7 +21,7 @@ export function formatCentsCompact(cents: number): string {
  * null if it is not an amount.
  */
 export function parseEuros(text: string): number | null {
-  const normalized = text.replace(/[\s  €]/g, '').replace(',', '.');
+  const normalized = text.replace(/[\s\u00a0\u202f€]/g, '').replace(',', '.');
   if (!/^-?\d+(\.\d{1,2})?$/.test(normalized)) {
     return null;
   }

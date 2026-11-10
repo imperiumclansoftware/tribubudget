@@ -26,6 +26,9 @@ ARG APP_VERSION=dev
 ENV APP_VERSION=${APP_VERSION} \
     APP_ENV=prod \
     APP_DEBUG=0 \
+    # The reverse proxy that provides HTTPS (same host or Docker network): trusted for the
+    # visitor's IP and the HTTPS scheme (Secure cookies). Override with its address if needed.
+    TRUSTED_PROXIES=private_ranges \
     COMPOSER_ALLOW_SUPERUSER=1
 
 # Refuses a base image with a vulnerable PHP (CVE-2026-109618 and CVE-2026-109619, "PHP2Shell":
@@ -58,11 +61,10 @@ COPY --from=frontend /build/dist/browser/ ./public/
 RUN composer dump-autoload --no-dev --classmap-authoritative \
     && php bin/console cache:clear --no-warmup \
     && php bin/console cache:warmup \
-    # Everything that must survive an update lives in the /data volume (database, secrets, JWT
-    # keys, installation code)
+    # Everything that must survive an update lives in the /data volume (database with the
+    # sessions, secrets, installation code)
     && mkdir -p /data var \
-    && rm -rf config/jwt var/setup \
-    && ln -s /data/jwt config/jwt \
+    && rm -rf var/setup \
     && ln -s /data/setup var/setup \
     && chown -R www-data:www-data /data var
 

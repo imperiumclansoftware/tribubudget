@@ -1,5 +1,6 @@
-# Checks every change: tests, static analysis and code style of the API; tests and build of the app.
-# Also called by the release workflow before a release is published.
+# Checks every change (team guidelines, "Outillage, CI et maintenance"): vulnerable dependencies,
+# tests, static analysis and code style of the API and of the app; secrets and SAST on the whole
+# repository. Also called by the release workflow before a release is published.
 name: CI
 
 on:
@@ -7,6 +8,9 @@ on:
     branches: [main]
   pull_request:
   workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
   backend:
@@ -28,9 +32,9 @@ jobs:
     env:
       DATABASE_URL: postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.4'
           extensions: pdo_pgsql, intl
@@ -39,8 +43,8 @@ jobs:
       - name: Dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
-      - name: JWT keys
-        run: php bin/console lexik:jwt:generate-keypair --skip-if-exists
+      - name: Vulnerable dependencies
+        run: composer audit
 
       - name: Test database
         run: php bin/console doctrine:database:create --env=test --if-not-exists
@@ -51,6 +55,7 @@ jobs:
       - name: Static analysis
         run: |
           php bin/console cache:warmup --env=dev
+          php bin/console lint:container
           vendor/bin/phpstan analyse --no-progress
 
       - name: Code style
@@ -62,15 +67,37 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
       - run: npm ci --no-audit --no-fund
+      - run: npm audit --audit-level=high
       - run: npm run format:check
+      - run: npx ng lint
       - run: npx ng test --watch=false
       - run: npx ng build
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+      # Rules: .gitleaks.toml. GITLEAKS_LICENSE is only needed if the repository moves to an
+      # organisation (free key from https://gitleaks.io); a personal account needs none.
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  sast:
+    runs-on: ubuntu-latest
+    container: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - run: semgrep scan --error --config p/php --config p/typescript --config p/owasp-top-ten

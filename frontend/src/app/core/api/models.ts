@@ -24,10 +24,6 @@ export interface Me extends Member {
   pendingRequests: number;
 }
 
-export interface AuthResponse {
-  token: string;
-}
-
 export interface Account {
   id: number;
   name: string;

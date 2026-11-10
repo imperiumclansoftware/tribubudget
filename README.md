@@ -6,7 +6,7 @@ font leurs demandes aux parents.
 
 | Partie     | Stack                                                  | URL de dev            |
 |------------|--------------------------------------------------------|-----------------------|
-| `backend`  | Symfony 8.1, Doctrine ORM, PostgreSQL 16, LexikJWT     | http://127.0.0.1:8002 |
+| `backend`  | Symfony 8.1, Doctrine ORM, PostgreSQL 16, sessions     | http://127.0.0.1:8002 |
 | `frontend` | Angular 22 (standalone, signals, SCSS)                 | http://localhost:4400 |
 
 ## Fonctionnement
@@ -18,8 +18,9 @@ font leurs demandes aux parents.
   un *Compte courant* et des catégories prêtes à l’emploi (`App\Money\FamilySetup`). Il n’y a pas
   d’inscription libre : un parent ajoute l’autre parent, les ados et les enfants (*Famille*).
 - **Trois profils** (`App\Enum\FamilyRole`) :
-  - **Parent** : accès à tout. Mot de passe de 8 caractères au moins.
-  - **Ado** : seulement *ses* comptes et *ses* demandes. Mot de passe de 8 caractères au moins.
+  - **Parent** : accès à tout. Mot de passe de 12 caractères au moins, difficile à deviner et absent des
+    fuites de données connues (vérifié sur Have I Been Pwned quand le serveur a accès à Internet).
+  - **Ado** : seulement *ses* comptes et *ses* demandes. Mêmes règles de mot de passe que les parents.
   - **Enfant** : seulement *sa* tirelire et *ses* demandes. Il se connecte avec un code de 4 à 12 chiffres ;
     un parent le change s’il l’oublie. La connexion est freinée après 5 essais ratés en 15 minutes
     (`login_throttling`), un code court se devinant vite.
@@ -141,7 +142,6 @@ colonnes). Tokens : `--sidebar-width`, `--content-max`.
 cd backend
 docker compose up -d                      # PostgreSQL sur le port 5434
 composer install
-php bin/console lexik:jwt:generate-keypair
 php bin/console doctrine:migrations:migrate -n
 php -S 127.0.0.1:8002 -t public           # ou : symfony serve --port=8002
 
@@ -169,8 +169,8 @@ docker logs tribubudget          # code d’installation, demandé sur http://<s
 ```
 
 Au premier lancement, [`docker/entrypoint.sh`](docker/entrypoint.sh) crée dans le volume `/data` les secrets
-(`/data/secrets` : `APP_SECRET`, `JWT_PASSPHRASE`, mot de passe de la base), la base (`/data/postgres`, écoutant
-seulement en interne), les clés JWT et le code d’installation ; les variables d’environnement, si elles sont
+(`/data/secrets` : `APP_SECRET`, mot de passe de la base), la base (`/data/postgres`, écoutant
+seulement en interne, sessions comprises) et le code d’installation ; les variables d’environnement, si elles sont
 données, priment. Avec `DATABASE_URL`, l’image utilise cette base au lieu de la sienne (installations 0.1.0).
 Les processus tournent sous leur propre utilisateur (`postgres`, `www-data`), sous `tini` ; à l’arrêt, PostgreSQL
 s’arrête proprement. Commandes : `docker exec tribubudget console …`. Fichiers : [`docker/compose.yaml`](docker/compose.yaml),
@@ -195,7 +195,7 @@ docker build --pull -t iemperor/tribubudget:X.Y.Z --build-arg APP_VERSION=X.Y.Z 
 cd backend
 php bin/console doctrine:database:create --env=test --if-not-exists
 php bin/phpunit                  # tests fonctionnels de l’API (droits, argent de poche, demandes…)
-vendor/bin/phpstan analyse       # niveau 6
+vendor/bin/phpstan analyse       # niveau max (erreurs anciennes : phpstan-baseline.neon)
 vendor/bin/php-cs-fixer fix
 
 cd frontend

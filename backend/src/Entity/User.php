@@ -117,6 +117,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, FamilyO
         $this->password = $hashedPassword;
     }
 
+    /**
+     * What the session keeps of the member: no password hash in the sessions table, only its
+     * CRC32C, enough for Symfony to sign out the other sessions once the password changes.
+     *
+     * @return array<mixed>
+     */
+    public function __serialize(): array
+    {
+        $data = (array) $this;
+        $data["\0".self::class."\0password"] = hash('crc32c', $this->password);
+
+        return $data;
+    }
+
     public function getAdvanceOwed(): int
     {
         return $this->advanceOwed;

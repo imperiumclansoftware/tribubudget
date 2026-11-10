@@ -1,15 +1,39 @@
 # see https://symfony.com/doc/current/reference/configuration/framework.html
 framework:
     secret: '%env(APP_SECRET)%'
+    http_method_override: false
 
-    # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    # Behind a reverse proxy (HTTPS), its address must be trusted for the app to see the visitor's
+    # IP (login throttling, logs) and that the connection is secure (Secure cookies).
+    # e.g. TRUSTED_PROXIES=private_ranges in the Docker image (docker/DOCKERHUB.md).
+    trusted_proxies: '%env(default::TRUSTED_PROXIES)%'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-host']
 
-    #esi: true
-    #fragments: true
+    # Authentication by session cookie, never a token in the browser (docs/adr/0001-session-cookie.md).
+    # Sessions live in PostgreSQL: an update or a restart of the container signs nobody out.
+    session:
+        handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
+        name: TRIBUBUDGET_SID
+        cookie_httponly: true
+        # Secure as soon as the request is HTTPS (directly or through a trusted proxy). Not forced:
+        # a family may run the app over plain HTTP on its home network (ADR 0001).
+        cookie_secure: auto
+        cookie_samesite: lax
+        # A family app should not sign people out every hour: 7 days, as the JWT did before
+        cookie_lifetime: 604800
+        gc_maxlifetime: 604800
+
+    validation:
+        # Passwords of parents and teenagers: refused when found in known data leaks
+        # (Have I Been Pwned, k-anonymity: only 5 characters of the SHA-1 leave the server)
+        not_compromised_password: true
 
 when@test:
     framework:
         test: true
         session:
+            handler_id: null
             storage_factory_id: session.storage.factory.mock_file
+        validation:
+            # No network call from the tests
+            not_compromised_password: false

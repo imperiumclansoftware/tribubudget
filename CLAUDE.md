@@ -16,7 +16,6 @@ Backend (`backend/`, Symfony 8.1, PHP 8.4, PostgreSQL 16):
 ```bash
 docker compose up -d                       # dev PostgreSQL on port 5434 (compose project "tribubudget")
 composer install
-php bin/console lexik:jwt:generate-keypair
 php bin/console doctrine:migrations:migrate -n
 php -S 127.0.0.1:8002 -t public            # API on http://127.0.0.1:8002 (or: symfony serve --port=8002)
 php bin/console app:setup:code             # code asked by the installation page (/installation)
@@ -26,7 +25,8 @@ php bin/console doctrine:database:create --env=test --if-not-exists   # once, be
 php bin/phpunit                            # all tests
 php bin/phpunit tests/Api/TransferTest.php
 php bin/phpunit --filter TransferTest
-vendor/bin/phpstan analyse                 # level 6; needs the dev container (bin/console cache:warmup --env=dev)
+vendor/bin/phpstan analyse                 # level max + phpstan-baseline.neon (old errors, never add to it); needs the dev container (bin/console cache:warmup --env=dev)
+php bin/console app:user:reset-password <username>   # last-resort password reset (docs/adr/0003)
 vendor/bin/php-cs-fixer fix                # CI runs it with --dry-run --diff
 ```
 
@@ -50,8 +50,14 @@ Docker image (the whole app in one image):
 docker build --pull -t iemperor/tribubudget:X.Y.Z --build-arg APP_VERSION=X.Y.Z .
 ```
 
-CI (`.github/workflows/ci.yml`) runs PHPUnit, PHPStan and php-cs-fixer for the backend, and
-`format:check`, `ng test` and `ng build` for the frontend.
+CI (`.github/workflows/ci.yml`) runs `composer audit`, PHPUnit, `lint:container`, PHPStan and
+php-cs-fixer for the backend; `npm audit --audit-level=high`, `format:check`, `ng lint`, `ng test` and
+`ng build` for the frontend; gitleaks (`.gitleaks.toml`) and Semgrep on the whole repo. Actions are pinned to
+commit SHAs (Renovate, `renovate.json`, keeps them up to date).
+
+The team's security guidelines apply (skill `symfony-angular-security`, reference project `secure-skeleton`);
+the deliberate deviations are recorded as ADRs in `docs/adr/` (session cookie over HTTP at home, child PIN,
+no e-mail reset, UUID v7 migration still to do).
 
 ## Architecture
 
@@ -66,10 +72,12 @@ falls back to `index.html` for app routes, and sends `/api/` to PHP-FPM on `127.
 `docker/entrypoint.sh` (under `tini`, as root) creates the secrets in `/data/secrets` unless given as env
 vars, initialises and starts the embedded PostgreSQL in `/data/postgres` (listening on 127.0.0.1 only)
 unless `DATABASE_URL` is given, writes them to `/app/.env.local` (so `docker exec … console` sees them),
-runs migrations, JWT keys and `app:setup:code`, then starts `docker/scheduler.sh` (`app:schedules:run`
+runs migrations and `app:setup:code`, then starts `docker/scheduler.sh` (`app:schedules:run`
 every `SCHEDULER_INTERVAL`, default 1 h) and `docker/web.sh` (PHP-FPM + nginx, masters as root, workers
-as `www-data`). On SIGTERM it stops everything and shuts PostgreSQL down cleanly. `config/jwt` and
-`var/setup` are symlinks into `/data`. The Dockerfile refuses a base image with PHP < 8.4.27 (rebuild with
+as `www-data`). On SIGTERM it stops everything and shuts PostgreSQL down cleanly. `var/setup` is a
+symlink into `/data`; the sessions live in the database. nginx sets the Angular app's security headers
+(strict CSP with Trusted Types, HSTS only when the request came over HTTPS) at `server` level; `/api/`
+keeps Symfony's (`nelmio_security.yaml`). `TRUSTED_PROXIES` defaults to `private_ranges`. The Dockerfile refuses a base image with PHP < 8.4.27 (rebuild with
 `--pull`).
 
 ### Backend
@@ -88,8 +96,18 @@ as `www-data`). On SIGTERM it stops everything and shuts PostgreSQL down cleanly
   `#[IsGranted(message: …)]` denials into HTTP exceptions; `tests/Api/ApiErrorTest.php` checks it with a
   non-debug kernel. Validation errors keep Symfony's `violations` format. The frontend's
   `apiErrorMessage()` reads both.
-- **Security** (`config/packages/security.yaml`): stateless JWT (LexikJWT), `json_login` on `/api/login`
-  with `login_throttling` (5 tries / 15 min, children log in with a short PIN). Only `/api/login`,
+- **Security** (`config/packages/security.yaml`, `docs/adr/0001-session-cookie.md`): session cookie
+  `TRIBUBUDGET_SID` (HttpOnly, SameSite=Lax, `Secure` when HTTPS; sessions in PostgreSQL through
+  `PdoSessionHandler`), `json_login` on `/api/login` (success reaches `AuthController::login()`, which
+  returns the member; failures go through `LoginFailureHandler`: same 401 for unknown user or wrong
+  password, 429 when throttled), `login_throttling` (5 tries / 15 min, children log in with a short PIN),
+  `POST /api/logout`. CSRF: `EventSubscriber\CsrfDoubleSubmitSubscriber` requires the `X-XSRF-TOKEN` header
+  to match the `XSRF-TOKEN` cookie on every non-GET `/api` request, login included. Passwords: Argon2id
+  (`sodium`, old bcrypt hashes rehashed at sign-in by `UserRepository::upgradePassword()`), rules in the
+  `Security\PasswordPolicy` service (12 chars + `PasswordStrength` + `NotCompromisedPassword` for parents
+  and teens, 4–12 digit PIN for children). `Security\SecurityAudit` writes sign-ins, refusals, member and
+  password changes to the `audit` log channel (stderr in prod); `Logging\SensitiveDataProcessor` masks
+  secrets in every log. Only `/api/login`,
   `/api/health` and `/api/setup(/verify)` are public. Roles: `ROLE_PARENT` and `ROLE_TEEN` both inherit
   `ROLE_ACCOUNT_HOLDER`; `ROLE_CHILD`. Household controllers carry `#[IsGranted('ROLE_PARENT', message: …)]`; finer rules live
   in the voters of `src/Security` (a child/teen sees only their own data, a teen edits only what they
@@ -121,8 +139,12 @@ as `www-data`). On SIGTERM it stops everything and shuts PostgreSQL down cleanly
 ### Backend tests
 
 Mostly functional (`tests/Api`), extending `tests/ApiTestCase.php`: the schema is recreated once per
-PHPUnit run, then every table is truncated before **each** test. Helpers: `registerFamily()` (returns a
-parent token), `addChild()`, `addTeen()`, `login()`, `api()` (JSON in, decoded JSON out). `tests/Money`
+PHPUnit run, then every table is truncated before **each** test, and the login throttling is reset.
+Helpers: `registerFamily()` (returns a parent "token": the id of their session), `addChild()`, `addTeen()`,
+`login()`, `api()` (JSON in, decoded JSON out; sends the session cookie and the CSRF cookie + header, or
+not with `csrf: false`). Test passwords of parents/teens must pass `PasswordPolicy` (12 chars, not weak);
+`NotCompromisedPassword` makes no network call in tests. `tests/Api/SecurityTest.php` covers sessions,
+CSRF, throttling, password rules and headers. `tests/Money`
 holds unit tests (`VehicleCatalogTest` uses `MockHttpClient`). PHPUnit fails on deprecations, notices and
 warnings.
 
@@ -132,8 +154,12 @@ warnings.
   layout, with French paths (`tableau-de-bord`, `famille/ado/:teenId`…) and role guards
   (`parentGuard`, `teenGuard`, `childGuard`, `setupGuard` for `/installation`). Route params arrive as
   component inputs (`withComponentInputBinding`). Locale `fr-FR`.
-- HTTP: `core/budget-api.ts` and `core/auth/auth.service.ts` wrap `HttpClient`; `authInterceptor` adds the
-  JWT (kept in `localStorage`) and logs out on a 401.
+- HTTP: `core/budget-api.ts` and `core/auth/auth.service.ts` wrap `HttpClient`. No token in the browser:
+  the session is an HttpOnly cookie; `authInterceptor` sets `withCredentials` on `api/…` calls only and
+  sends the member back to the sign-in page on a 401; `withXsrfConfiguration` (app.config.ts) sends the
+  CSRF header. ESLint (`npm run lint`, `eslint.config.js`) forbids `localStorage`/`sessionStorage`,
+  `innerHTML`, `bypassSecurityTrust*`, `Math.random` and `eval`; TypeScript `strict` and `strictTemplates`.
+  The production build does not inline critical CSS (its `onload` handler would break the CSP).
 - Styling: mobile first, light/dark from the system. Tokens and layout come from the shared `themecss/`
   theme (outside this repo), adapted in `src/styles/` (`_tokens.scss`, `_base.scss`, `_layout.scss`, `_components.scss`);
   no touch target under 48 px (`--touch-target`); breakpoints 600/768/1024/1280/1440 px (sidebar

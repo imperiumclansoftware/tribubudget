@@ -7,9 +7,11 @@ use App\Entity\User;
 use App\Enum\FamilyRole;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 
 /** @extends ServiceEntityRepository<User> */
-class UserRepository extends ServiceEntityRepository
+class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -41,6 +43,16 @@ class UserRepository extends ServiceEntityRepository
     public function teens(Family $family): array
     {
         return $this->findBy(['family' => $family, 'role' => FamilyRole::Teen], ['displayName' => 'ASC']);
+    }
+
+    /** Called at sign-in when the hash is outdated (bcrypt before 0.6.0, or a cost raised since) */
+    public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
+    {
+        if (!$user instanceof User) {
+            return;
+        }
+        $user->setPassword($newHashedPassword);
+        $this->getEntityManager()->flush();
     }
 
     public function isUsernameTaken(string $username): bool

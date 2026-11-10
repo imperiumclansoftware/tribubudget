@@ -15,8 +15,8 @@ use App\Repository\UserRepository;
 use App\Security\PasswordPolicy;
 use App\Setup\SetupCode;
 use Doctrine\ORM\EntityManagerInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -78,7 +78,8 @@ final class SetupController extends AbstractController
         UserRepository $users,
         UserPasswordHasherInterface $hasher,
         FamilySetup $setup,
-        JWTTokenManagerInterface $jwt,
+        PasswordPolicy $passwordPolicy,
+        Security $security,
         ApiPresenter $presenter,
     ): JsonResponse {
         // Two installation pages submitted at the same time: only one installs
@@ -87,7 +88,7 @@ final class SetupController extends AbstractController
         try {
             $this->assertNotInstalled();
             $this->assertCode($payload->code, $request);
-            PasswordPolicy::check(FamilyRole::Parent, $payload->password);
+            $passwordPolicy->check(FamilyRole::Parent, $payload->password);
             if ($users->isUsernameTaken($payload->username)) {
                 throw new UnprocessableEntityHttpException('Cet identifiant est déjà pris.');
             }
@@ -104,10 +105,10 @@ final class SetupController extends AbstractController
             $lock->release();
         }
 
-        return $this->json([
-            'token' => $jwt->create($parent),
-            'user' => $presenter->me($parent, 0),
-        ], Response::HTTP_CREATED);
+        // The first parent is signed in right away (session cookie)
+        $security->login($parent, 'json_login', 'main');
+
+        return $this->json(['user' => $presenter->me($parent, 0)], Response::HTTP_CREATED);
     }
 
     private function installed(): bool

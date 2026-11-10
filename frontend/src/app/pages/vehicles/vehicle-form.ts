@@ -41,7 +41,7 @@ export class VehicleForm {
   /** The vehicle to describe; absent to add one */
   readonly vehicle = input<Vehicle | null>(null);
   readonly saved = output<VehicleDetail>();
-  readonly cancelled = output<void>();
+  readonly cancelled = output();
 
   protected readonly energies = Object.entries(VEHICLE_ENERGY_LABELS) as [VehicleEnergy, string][];
   protected readonly energyLabels = VEHICLE_ENERGY_LABELS;

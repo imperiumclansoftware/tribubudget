@@ -1,10 +1,8 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, firstValueFrom, tap } from 'rxjs';
-import { AuthResponse, Me } from '../api/models';
-
-const TOKEN_KEY = 'tribubudget.token';
+import { Observable, firstValueFrom, map, tap } from 'rxjs';
+import { Me } from '../api/models';
 
 export interface SetupPayload {
   code: string;
@@ -14,15 +12,17 @@ export interface SetupPayload {
   password: string;
 }
 
+/**
+ * The signed-in member. The session lives in an HttpOnly cookie set by the API: the app never sees
+ * nor stores a token (docs/adr/0001-session-cookie.md); it only keeps the member in memory.
+ */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
-  private readonly _token = signal<string | null>(readToken());
   private readonly _user = signal<Me | null>(null);
 
-  readonly token = this._token.asReadonly();
   readonly user = this._user.asReadonly();
   readonly isParent = computed(() => this._user()?.role === 'parent');
   readonly isChild = computed(() => this._user()?.role === 'child');
@@ -38,10 +38,11 @@ export class AuthService {
   });
   private _installed = false;
 
-  login(username: string, password: string): Observable<AuthResponse> {
+  /** Signs in: the API sets the session cookie and answers with the member. */
+  login(username: string, password: string): Observable<Me> {
     return this.http
-      .post<AuthResponse>('api/login', { username, password })
-      .pipe(tap((response) => this.storeToken(response.token)));
+      .post<Me>('api/login', { username, password })
+      .pipe(tap((user) => this._user.set(user)));
   }
 
   /** Whether the installation has run; known for good once it is true. */
@@ -61,29 +62,25 @@ export class AuthService {
 
   /** First step of the installation page: the code shown on the server. */
   verifySetupCode(code: string): Observable<void> {
-    return this.http.post<void>('api/setup/verify', { code });
+    return noContent(this.http.post<null>('api/setup/verify', { code }));
   }
 
   /** Installs TribuBudget: creates the family and its first parent, signed in right away. */
-  install(payload: SetupPayload): Observable<AuthResponse & { user: Me }> {
-    return this.http.post<AuthResponse & { user: Me }>('api/setup', payload).pipe(
+  install(payload: SetupPayload): Observable<{ user: Me }> {
+    return this.http.post<{ user: Me }>('api/setup', payload).pipe(
       tap((response) => {
         this._installed = true;
-        this.storeToken(response.token);
         this._user.set(response.user);
       }),
     );
   }
 
   changePassword(currentPassword: string, newPassword: string): Observable<void> {
-    return this.http.post<void>('api/me/password', { currentPassword, newPassword });
+    return noContent(this.http.post<null>('api/me/password', { currentPassword, newPassword }));
   }
 
   /** Loads the signed-in member; resolves to false when there is no valid session. */
   async restoreSession(): Promise<boolean> {
-    if (!this._token()) {
-      return false;
-    }
     if (this._user()) {
       return true;
     }
@@ -91,9 +88,9 @@ export class AuthService {
       this._user.set(await firstValueFrom(this.http.get<Me>('api/me')));
       return true;
     } catch (e) {
-      // Only a rejected session logs out: a network error keeps it
+      // 401: no session (or an expired one). A network error keeps the member where they are.
       if (e instanceof HttpErrorResponse && (e.status === 401 || e.status === 403)) {
-        this.clear();
+        this._user.set(null);
       }
       return false;
     }
@@ -106,35 +103,24 @@ export class AuthService {
     }
   }
 
-  logout(): void {
-    this.clear();
-    void this.router.navigate(['/connexion']);
-  }
-
-  private storeToken(token: string): void {
-    this._token.set(token);
+  /** Ends the session on the server, then goes back to the sign-in page. */
+  async logout(): Promise<void> {
     try {
-      localStorage.setItem(TOKEN_KEY, token);
+      await firstValueFrom(this.http.post<null>('api/logout', null));
     } catch {
-      // Storage unavailable (private mode…): the session lasts until the page is closed
+      // Already signed out (expired session) or server unreachable: forget the member anyway
     }
+    this.sessionEnded();
   }
 
-  private clear(): void {
-    this._token.set(null);
+  /** The session is over (signed out, expired, or the password changed elsewhere). */
+  sessionEnded(): void {
     this._user.set(null);
-    try {
-      localStorage.removeItem(TOKEN_KEY);
-    } catch {
-      // Nothing to clean up
-    }
+    void this.router.navigate(['/connexion']);
   }
 }
 
-function readToken(): string | null {
-  try {
-    return localStorage.getItem(TOKEN_KEY);
-  } catch {
-    return null;
-  }
+/** For the API calls that answer 204 No Content. */
+function noContent(request: Observable<unknown>): Observable<void> {
+  return request.pipe(map(() => undefined));
 }

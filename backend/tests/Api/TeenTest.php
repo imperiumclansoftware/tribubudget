@@ -48,12 +48,12 @@ final class TeenTest extends ApiTestCase
     {
         $this->api('POST', '/api/members', $this->parent, ['displayName' => 'Zoé', 'username' => 'zoe', 'role' => 'teen', 'password' => '1234']);
         self::assertResponseStatusCodeSame(422);
-        self::assertStringContainsString('adolescent compte au moins 8', $this->client->getResponse()->getContent());
+        self::assertStringContainsString('adolescent compte au moins 12', $this->client->getResponse()->getContent());
     }
 
     public function testATeenagerSeesTheirOwnAccountsButNotTheHouseholdNorASiblings(): void
     {
-        [$zoeId] = $this->addTeen($this->parent, 'zoe', 'secret-zoe');
+        [$zoeId] = $this->addTeen($this->parent, 'zoe', 'Zebre-orange-du-lundi');
 
         $this->api('GET', "/api/teens/$zoeId", $this->hugo);
         self::assertResponseStatusCodeSame(403);

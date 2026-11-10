@@ -60,7 +60,10 @@
       <label class="field">
         <span>Mot de passe</span>
         <input formControlName="password" type="password" autocomplete="new-password" />
-        <small class="hint">8 caractères au moins.</small>
+        <small class="hint"
+          >12 caractères au moins, difficile à deviner : plusieurs mots, des chiffres, des
+          signes.</small
+        >
       </label>
 
       @if (error(); as message) {

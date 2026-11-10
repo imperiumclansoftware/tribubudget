@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import {
   Account,
   AccountType,
@@ -63,6 +63,11 @@ export interface CategoryPayload {
 }
 
 /** Calls of the API, one method per endpoint. */
+/** Calls whose response body is not used: the observable just completes */
+function noContent(request: Observable<unknown>): Observable<void> {
+  return request.pipe(map(() => undefined));
+}
+
 @Injectable({ providedIn: 'root' })
 export class BudgetApi {
   private readonly http = inject(HttpClient);
@@ -95,7 +100,7 @@ export class BudgetApi {
   }
 
   deleteAccount(id: number): Observable<void> {
-    return this.http.delete<void>(`api/accounts/${id}`);
+    return noContent(this.http.delete(`api/accounts/${id}`));
   }
 
   // Categories and budgets
@@ -111,7 +116,7 @@ export class BudgetApi {
   }
 
   deleteCategory(id: number): Observable<void> {
-    return this.http.delete<void>(`api/categories/${id}`);
+    return noContent(this.http.delete(`api/categories/${id}`));
   }
 
   // Operations
@@ -137,7 +142,7 @@ export class BudgetApi {
   }
 
   deleteOperation(id: number): Observable<void> {
-    return this.http.delete<void>(`api/operations/${id}`);
+    return noContent(this.http.delete(`api/operations/${id}`));
   }
 
   /** Ticks an operation off against the bank statement, or unticks it */
@@ -157,7 +162,7 @@ export class BudgetApi {
   }
 
   deleteTransfer(id: number): Observable<void> {
-    return this.http.delete<void>(`api/transfers/${id}`);
+    return noContent(this.http.delete(`api/transfers/${id}`));
   }
 
   // Recurring operations
@@ -176,7 +181,7 @@ export class BudgetApi {
   }
 
   deleteRecurringOperation(id: number): Observable<void> {
-    return this.http.delete<void>(`api/recurring-operations/${id}`);
+    return noContent(this.http.delete(`api/recurring-operations/${id}`));
   }
 
   // Savings projects
@@ -190,13 +195,13 @@ export class BudgetApi {
     payload: { accountId: number; name: string; target: number },
   ): Observable<void> {
     return id === null
-      ? this.http.post<void>('api/projects', payload)
-      : this.http.put<void>(`api/projects/${id}`, payload);
+      ? noContent(this.http.post('api/projects', payload))
+      : noContent(this.http.put(`api/projects/${id}`, payload));
   }
 
   /** New order of the projects of a savings account, the first one funded first */
   prioritizeProjects(accountId: number, projectIds: number[]): Observable<void> {
-    return this.http.put<void>('api/projects/priorities', { accountId, projectIds });
+    return noContent(this.http.put('api/projects/priorities', { accountId, projectIds }));
   }
 
   achieveProject(
@@ -204,11 +209,13 @@ export class BudgetApi {
     recordWithdrawal: boolean,
     categoryId: number | null,
   ): Observable<void> {
-    return this.http.post<void>(`api/projects/${id}/achieve`, { recordWithdrawal, categoryId });
+    return noContent(
+      this.http.post(`api/projects/${id}/achieve`, { recordWithdrawal, categoryId }),
+    );
   }
 
   deleteProject(id: number): Observable<void> {
-    return this.http.delete<void>(`api/projects/${id}`);
+    return noContent(this.http.delete(`api/projects/${id}`));
   }
 
   // Members
@@ -231,11 +238,11 @@ export class BudgetApi {
   }
 
   resetPassword(id: number, password: string): Observable<void> {
-    return this.http.put<void>(`api/members/${id}/password`, { password });
+    return noContent(this.http.put(`api/members/${id}/password`, { password }));
   }
 
   deleteMember(id: number): Observable<void> {
-    return this.http.delete<void>(`api/members/${id}`);
+    return noContent(this.http.delete(`api/members/${id}`));
   }
 
   // Pocket money
@@ -347,7 +354,7 @@ export class BudgetApi {
   }
 
   deleteVehicle(id: number): Observable<void> {
-    return this.http.delete<void>(`api/vehicles/${id}`);
+    return noContent(this.http.delete(`api/vehicles/${id}`));
   }
 
   /** A new fill-up of the vehicle, or a change to the fill-up `refuelId` */

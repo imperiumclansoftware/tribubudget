@@ -1,0 +1,33 @@
+# Security headers of the API responses (guidelines: "En-têtes HTTP, CORS et cookies"). Those of the
+# Angular application are set by nginx (docker/nginx.conf).
+nelmio_security:
+    clickjacking:
+        paths:
+            '^/.*': DENY
+    content_type:
+        nosniff: true
+    referrer_policy:
+        enabled: true
+        policies:
+            - 'strict-origin-when-cross-origin'
+    # The API only answers JSON: a minimal CSP
+    csp:
+        # No legacy X-Content-Security-Policy header
+        compat_headers: false
+        enforce:
+            level1_fallback: false
+            default-src: ['none']
+            frame-ancestors: ['none']
+            base-uri: ['none']
+    permissions_policy:
+        enabled: true
+        policies:
+            camera: []
+            microphone: []
+            geolocation: []
+    cross_origin_isolation:
+        enabled: true
+        paths:
+            '^/': { coop: 'same-origin', corp: 'same-origin' }
+    # No forced_ssl/HSTS here: a family may run the app over HTTP on its home network; nginx
+    # sends HSTS when the request came over HTTPS (docker/nginx.conf, ADR 0001).

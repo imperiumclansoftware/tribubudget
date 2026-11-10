@@ -162,15 +162,17 @@
       <span>Identifiant de connexion</span>
       <input formControlName="username" autocapitalize="none" autocomplete="off" />
     </label>
-    <label class="field">
-      @if (addRole() === 'child') {
+    @if (addRole() === 'child') {
+      <label class="field">
         <span>Code (4 chiffres ou plus)</span>
         <input formControlName="password" inputmode="numeric" autocomplete="off" />
-      } @else {
-        <span>Mot de passe (8 caractères ou plus)</span>
+      </label>
+    } @else {
+      <label class="field">
+        <span>Mot de passe (12 caractères ou plus)</span>
         <input formControlName="password" type="password" autocomplete="new-password" />
-      }
-    </label>
+      </label>
+    }
     @if (error(); as message) {
       <p class="error" role="alert">{{ message }}</p>
     }
@@ -193,17 +195,19 @@
       <span>Prénom</span>
       <input formControlName="displayName" />
     </label>
-    <label class="field">
-      @if (editing()?.role === 'child') {
+    @if (editing()?.role === 'child') {
+      <label class="field">
         <span>Nouveau code</span>
         <input formControlName="password" inputmode="numeric" autocomplete="off" />
         <small class="hint">Laissez vide pour garder le code actuel.</small>
-      } @else {
+      </label>
+    } @else {
+      <label class="field">
         <span>Nouveau mot de passe</span>
         <input formControlName="password" type="password" autocomplete="new-password" />
         <small class="hint">Laissez vide pour garder le mot de passe actuel.</small>
-      }
-    </label>
+      </label>
+    }
     @if (error(); as message) {
       <p class="error" role="alert">{{ message }}</p>
     }

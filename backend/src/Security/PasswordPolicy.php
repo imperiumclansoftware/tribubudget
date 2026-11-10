@@ -4,25 +4,52 @@ namespace App\Security;
 
 use App\Enum\FamilyRole;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
- * Parents protect the whole budget, and teenagers their accounts, with a password; children sign
- * in with a PIN of 4 or more digits.
+ * Parents protect the whole budget, and teenagers their accounts, with a password of 12 characters
+ * or more, neither weak nor found in a known data leak. Children sign in with a PIN of 4 to 12
+ * digits (docs/adr/0002-child-pin.md).
  */
-final class PasswordPolicy
+final readonly class PasswordPolicy
 {
-    public const MAX_LENGTH = 4096;
+    public const int MAX_LENGTH = 4096;
 
-    public static function check(FamilyRole $role, string $password): void
+    public function __construct(private ValidatorInterface $validator)
     {
-        if (FamilyRole::Child === $role && !preg_match('/^\d{4,12}$/', $password)) {
-            throw new UnprocessableEntityHttpException('Le code d’un enfant compte de 4 à 12 chiffres.');
-        }
-        if (FamilyRole::Child !== $role && mb_strlen($password) < $role->minPasswordLength()) {
-            throw new UnprocessableEntityHttpException(\sprintf('Le mot de passe d’un %s compte au moins %d caractères.', FamilyRole::Teen === $role ? 'adolescent' : 'parent', $role->minPasswordLength()));
-        }
+    }
+
+    public function check(FamilyRole $role, string $password): void
+    {
         if (\strlen($password) > self::MAX_LENGTH) {
             throw new UnprocessableEntityHttpException('Ce mot de passe est trop long.');
+        }
+        if (FamilyRole::Child === $role) {
+            if (!preg_match('/^\d{4,12}$/', $password)) {
+                throw new UnprocessableEntityHttpException('Le code d’un enfant compte de 4 à 12 chiffres.');
+            }
+
+            return;
+        }
+
+        $who = FamilyRole::Teen === $role ? 'adolescent' : 'parent';
+        $violations = $this->validator->validate($password, [
+            new Assert\Length(
+                min: $role->minPasswordLength(),
+                minMessage: \sprintf('Le mot de passe d’un %s compte au moins %d caractères.', $who, $role->minPasswordLength()),
+            ),
+            new Assert\PasswordStrength(
+                message: 'Ce mot de passe est trop facile à deviner : mélangez des mots, des chiffres et des signes.',
+            ),
+            // Have I Been Pwned; skipped when the server cannot reach it (home network without Internet)
+            new Assert\NotCompromisedPassword(
+                message: 'Ce mot de passe figure dans des fuites de données connues : choisissez-en un autre.',
+                skipOnError: true,
+            ),
+        ]);
+        foreach ($violations as $violation) {
+            throw new UnprocessableEntityHttpException((string) $violation->getMessage());
         }
     }
 }

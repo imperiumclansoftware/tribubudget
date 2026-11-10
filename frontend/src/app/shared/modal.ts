@@ -18,6 +18,11 @@ import { Icon } from './icon';
   imports: [Icon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <!--
+      The backdrop click is a mouse shortcut only: keyboard users close the dialog with Escape
+      (native cancel event) or the focusable close button, and a modal <dialog> manages focus.
+    -->
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
     <dialog
       #dialog
       [attr.aria-labelledby]="titleId"
@@ -108,7 +113,7 @@ export class Modal {
 
   readonly heading = input.required<string>();
   readonly open = input(false);
-  readonly closed = output<void>();
+  readonly closed = output();
 
   protected readonly titleId = `modal-title-${Modal.nextId++}`;
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');

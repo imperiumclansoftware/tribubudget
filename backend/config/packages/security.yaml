@@ -1,7 +1,11 @@
 security:
-    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
-        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+        # Argon2id (libsodium). Hashes made before 0.6.0 (bcrypt, "auto") are still checked, and
+        # replaced by Argon2id at the member's next sign-in (UserRepository::upgradePassword()).
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+            algorithm: sodium
+            migrate_from:
+                - bcrypt
 
     providers:
         app_user_provider:
@@ -14,25 +18,22 @@ security:
             # Ensure dev tools and static assets are always allowed
             pattern: ^/(_profiler(/|$)|(_wdt|assets|build)/)
             security: false
-        login:
-            pattern: ^/api/login$
-            stateless: true
+        main:
+            lazy: true
             provider: app_user_provider
+            # Session cookie (HttpOnly, SameSite=Lax), no token in the browser: docs/adr/0001-session-cookie.md.
+            # A successful sign-in goes on to AuthController::login(), which answers with the member.
             json_login:
-                check_path: /api/login
+                check_path: api_login
                 username_path: username
                 password_path: password
-                success_handler: lexik_jwt_authentication.handler.authentication_success
-                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+                failure_handler: App\Security\LoginFailureHandler
             # A child's PIN is short: slow down guessing (per username and per IP)
             login_throttling:
                 max_attempts: 5
                 interval: '15 minutes'
-        api:
-            pattern: ^/api
-            stateless: true
-            provider: app_user_provider
-            jwt: ~
+            logout:
+                path: api_logout
 
     # Parents and teenagers both record operations and transfers, each on the accounts they may
     # use (FamilyLookup, OperationVoter)
@@ -41,8 +42,9 @@ security:
         ROLE_TEEN: [ROLE_USER, ROLE_ACCOUNT_HOLDER]
         ROLE_CHILD: ROLE_USER
 
-    # Note: Only the *first* matching rule is applied. The finer rights (parent or child,
-    # same family) are checked by the controllers and the voters.
+    # Denied by default: every /api route needs a signed-in member, the public ones are listed
+    # first. Only the *first* matching rule is applied; the finer rights (parent or child, same
+    # family) are checked by the controllers and the voters.
     access_control:
         - { path: ^/api/(login|health)$, roles: PUBLIC_ACCESS }
         - { path: ^/api/setup(/verify)?$, roles: PUBLIC_ACCESS }

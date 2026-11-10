@@ -29,6 +29,7 @@ base sont créés au premier lancement.
 | Tag | Contenu |
 |---|---|
 | `latest` | Dernière version publiée |
+| `0.6.0` | Connexion par cookie de session (plus de jeton dans le navigateur), mots de passe de 12 caractères vérifiés contre les fuites connues, journal de sécurité, en-têtes de sécurité ; chaque membre se reconnecte une fois |
 | `0.5.1` | Refus d’accès affichés en clair (« Seuls les parents ont accès aux comptes. ») au lieu de « Forbidden » ; messages techniques du serveur masqués |
 | `0.5.0` | Véhicules : pleins avec budget carburant mensuel, entretiens avec leur budget, kilométrage, catalogue des modèles (ADEME) ; icône de l’application |
 | `0.4.0` | Serveur web nginx + PHP-FPM au lieu de FrankenPHP : aucune CVE connue dans l’image |
@@ -92,7 +93,8 @@ instance accueille une famille : il n’y a pas d’inscription libre.
 |---|---|
 | `APP_TIMEZONE` | Fuseau de « aujourd’hui » : dates de l’argent de poche et des échéances (`Europe/Paris`) |
 | `SCHEDULER_INTERVAL` | Secondes entre deux passages du planificateur (`3600`) |
-| `APP_SECRET`, `JWT_PASSPHRASE` | Pour imposer vos secrets ; sinon créés au premier lancement dans `/data/secrets` |
+| `APP_SECRET` | Pour imposer votre secret ; sinon créé au premier lancement dans `/data/secrets` |
+| `TRUSTED_PROXIES` | Adresses du reverse proxy HTTPS à croire (IP des visiteurs, HTTPS) : `private_ranges` par défaut |
 | `DATABASE_URL` | Pour utiliser votre propre PostgreSQL au lieu de la base intégrée |
 
 ## Le volume `/data`
@@ -101,7 +103,6 @@ instance accueille une famille : il n’y a pas d’inscription libre.
 |---|---|
 | `postgres/` | La base de données |
 | `secrets/` | Secrets créés au premier lancement (lisibles par root seulement) |
-| `jwt/` | Clés de signature des sessions |
 
 **Sauvegardez ce volume.** Pour un export de la base :
 
@@ -112,7 +113,20 @@ docker exec tribubudget su-exec postgres pg_dump tribubudget > tribubudget.sql
 ## HTTPS
 
 L’image sert en HTTP sur le port 80. Pour un accès depuis Internet, placez-la derrière un reverse proxy
-qui fournit le HTTPS (Caddy, Traefik, Nginx Proxy Manager…).
+qui fournit le HTTPS (Caddy, Traefik, Nginx Proxy Manager…). Le proxy doit transmettre `X-Forwarded-For` et
+`X-Forwarded-Proto` (ce que font ceux-là par défaut) : l’application voit alors l’adresse des visiteurs (limite
+des essais de connexion, journal de sécurité), marque le cookie de session `Secure` et envoie HSTS. Par défaut,
+un proxy sur une adresse privée (même machine, réseau Docker) est cru ; sinon, donnez son adresse dans
+`TRUSTED_PROXIES`.
+
+## Mot de passe oublié
+
+Un parent change le mot de passe ou le code de n’importe quel autre membre depuis *Famille*. Si le seul parent
+a oublié le sien :
+
+```bash
+docker exec -it tribubudget console app:user:reset-password <identifiant>
+```
 
 ## Mise à jour
 
@@ -125,6 +139,6 @@ Les migrations de la base sont jouées au démarrage.
 
 ### Depuis 0.1.0 (base PostgreSQL séparée)
 
-Gardez votre compose de la 0.1.0 et ses variables (`DATABASE_URL`, `APP_SECRET`, `JWT_PASSPHRASE`) : avec
+Gardez votre compose de la 0.1.0 et ses variables (`DATABASE_URL`, `APP_SECRET` ; `JWT_PASSPHRASE` ne sert plus depuis 0.6.0) : avec
 `DATABASE_URL`, l’image utilise votre base et ne démarre pas la sienne. Le service `scheduler` devient
 facultatif (le planificateur tourne aussi dans le conteneur principal).

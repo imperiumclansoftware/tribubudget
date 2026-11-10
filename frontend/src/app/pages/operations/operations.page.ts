@@ -9,7 +9,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import {
   FormsModule,
@@ -36,7 +35,6 @@ import { OperationTabs } from './operation-tabs';
   imports: [
     ReactiveFormsModule,
     FormsModule,
-    NgTemplateOutlet,
     MonthPicker,
     Modal,
     Icon,
@@ -77,6 +75,11 @@ export class OperationsPage {
     }
     return [...groups.values()];
   });
+  /** Choices of the transfer dialog: the household's accounts, then each teenager's */
+  protected readonly transferGroups = computed(() => [
+    { label: 'Comptes du foyer', accounts: this.accounts() },
+    ...this.teenAccounts().map((g) => ({ label: `Comptes de ${g.name}`, accounts: g.accounts })),
+  ]);
   protected readonly categories = rxResource({ stream: () => this.api.categories() });
   private readonly operations = rxResource({
     params: () => ({

@@ -1,4 +1,4 @@
-import { LowerCasePipe, NgTemplateOutlet } from '@angular/common';
+import { LowerCasePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -35,7 +35,6 @@ import { ReconcileCheck } from '../../shared/reconcile-check';
   imports: [
     ReactiveFormsModule,
     RouterLink,
-    NgTemplateOutlet,
     LowerCasePipe,
     MonthPicker,
     Modal,
@@ -76,6 +75,17 @@ export class TeenAccountsPage {
     ...this.accounts(),
     ...(this.household.value() ?? []),
   ]);
+  /** Choices of the transfer dialog: the teenager's accounts, then the household's */
+  protected readonly transferGroups = computed(() => {
+    const household = this.household.value() ?? [];
+    return [
+      {
+        label: this.auth.isTeen() ? 'Mes comptes' : `Comptes de ${this.teen()?.displayName ?? ''}`,
+        accounts: this.accounts(),
+      },
+      ...(household.length ? [{ label: 'Comptes du foyer', accounts: household }] : []),
+    ];
+  });
   private readonly accountsById = computed(
     () => new Map(this.transferAccounts().map((a) => [a.id, a])),
   );

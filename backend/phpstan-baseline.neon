@@ -1,0 +1,349 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: src/Api/VehicleCatalog.php
+
+		-
+			message: '#^Cannot access offset ''Description_Commerciale'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: src/Api/VehicleCatalog.php
+
+		-
+			message: '#^Cannot access offset ''Energie'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: src/Api/VehicleCatalog.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 3
+			path: src/Api/VehicleCatalog.php
+
+		-
+			message: '#^Method App\\Api\\VehicleCatalog\:\:get\(\) should return array\<string, mixed\> but returns array\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Api/VehicleCatalog.php
+
+		-
+			message: '#^Method App\\Api\\VehicleCatalog\:\:makes\(\) should return list\<string\> but returns list\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Api/VehicleCatalog.php
+
+		-
+			message: '#^Method App\\Api\\VehicleCatalog\:\:models\(\) should return list\<string\> but returns list\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Api/VehicleCatalog.php
+
+		-
+			message: '#^Method App\\Api\\VehicleCatalog\:\:versions\(\) should return list\<array\{label\: string, energy\: string, consumption\: int\|null\}\> but returns list\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Api/VehicleCatalog.php
+
+		-
+			message: '#^Parameter \#1 \$callback of function array_map expects \(callable\(mixed\)\: mixed\)\|null, Closure\(array\)\: string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Api/VehicleCatalog.php
+
+		-
+			message: '#^Parameter \#2 \$array of function array_map expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Api/VehicleCatalog.php
+
+		-
+			message: '#^Parameter \#2 \$line of static method App\\Api\\VehicleCatalog\:\:consumption\(\) expects array\<string, mixed\>, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Api/VehicleCatalog.php
+
+		-
+			message: '#^Parameter \#1 \$account of class App\\Entity\\Operation constructor expects App\\Entity\\Account, App\\Entity\\Account\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/OperationController.php
+
+		-
+			message: '#^Parameter \#1 \$account of method App\\Entity\\Operation\:\:edit\(\) expects App\\Entity\\Account, App\\Entity\\Account\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/OperationController.php
+
+		-
+			message: '#^Parameter \#1 \$account of class App\\Entity\\RecurringOperation constructor expects App\\Entity\\Account, App\\Entity\\Account\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/RecurringOperationController.php
+
+		-
+			message: '#^Parameter \#1 \$account of method App\\Entity\\RecurringOperation\:\:edit\(\) expects App\\Entity\\Account, App\\Entity\\Account\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/RecurringOperationController.php
+
+		-
+			message: '#^Parameter \#1 \$keys of function array_combine expects array\<int\|string\>, list\<int\|null\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/SavingsProjectController.php
+
+		-
+			message: '#^Parameter \#1 \$string of function trim expects string, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Dto/Text.php
+
+		-
+			message: '#^Method App\\Entity\\User\:\:getUserIdentifier\(\) should return non\-empty\-string but returns string\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Parameter \#1 \$string of function trim expects string, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Entity/Vehicle.php
+
+		-
+			message: '#^Parameter \#2 \$subject of function preg_match expects string, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Entity/Vehicle.php
+
+		-
+			message: '#^Offset ''category'' might not exist on array\{category\?\: App\\Entity\\Category\|null, spent\: int, recurring\?\: int\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Money/MonthForecast.php
+
+		-
+			message: '#^Offset ''recurring'' might not exist on array\{category\?\: App\\Entity\\Category\|null, spent\: int, recurring\?\: int\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 4
+			path: src/Money/MonthForecast.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 1
+			path: src/Repository/AccountRepository.php
+
+		-
+			message: '#^Method App\\Repository\\AccountRepository\:\:balances\(\) should return array\<int, int\> but returns array\<int\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/AccountRepository.php
+
+		-
+			message: '#^Parameter \#1 \$callback of function array_map expects \(callable\(mixed\)\: mixed\)\|null, Closure\(array\)\: array\{id\: mixed, balance\: int\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Repository/AccountRepository.php
+
+		-
+			message: '#^Method App\\Repository\\AllowanceRepository\:\:familiesWithDuePayments\(\) should return list\<App\\Entity\\Family\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/AllowanceRepository.php
+
+		-
+			message: '#^Method App\\Repository\\AllowanceRepository\:\:forFamily\(\) should return list\<App\\Entity\\Allowance\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/AllowanceRepository.php
+
+		-
+			message: '#^Method App\\Repository\\MaintenanceRepository\:\:dueBefore\(\) should return list\<App\\Entity\\Maintenance\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/MaintenanceRepository.php
+
+		-
+			message: '#^Method App\\Repository\\MaintenanceRepository\:\:forVehicle\(\) should return list\<App\\Entity\\Maintenance\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/MaintenanceRepository.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: src/Repository/MoneyRequestRepository.php
+
+		-
+			message: '#^Cannot call method getId\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Repository/MoneyRequestRepository.php
+
+		-
+			message: '#^Cannot call method getOperation\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Repository/MoneyRequestRepository.php
+
+		-
+			message: '#^Method App\\Repository\\MoneyRequestRepository\:\:latestForOperations\(\) should return array\<int, App\\Entity\\MoneyRequest\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/MoneyRequestRepository.php
+
+		-
+			message: '#^Method App\\Repository\\MoneyRequestRepository\:\:recent\(\) should return list\<App\\Entity\\MoneyRequest\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/MoneyRequestRepository.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 1
+			path: src/Repository/MoneyRequestRepository.php
+
+		-
+			message: '#^Cannot access offset ''expenses'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: src/Repository/OperationRepository.php
+
+		-
+			message: '#^Cannot access offset ''income'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: src/Repository/OperationRepository.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 2
+			path: src/Repository/OperationRepository.php
+
+		-
+			message: '#^Method App\\Repository\\OperationRepository\:\:between\(\) should return list\<App\\Entity\\Operation\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/OperationRepository.php
+
+		-
+			message: '#^Method App\\Repository\\OperationRepository\:\:spentByCategory\(\) should return array\<int, int\> but returns array\<int\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/OperationRepository.php
+
+		-
+			message: '#^Parameter \#1 \$callback of function array_map expects \(callable\(mixed\)\: mixed\)\|null, Closure\(array\|bool\|float\|GMP\|int\|resource\|SimpleXMLElement\|string\|null, int\=\)\: int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Repository/OperationRepository.php
+
+		-
+			message: '#^Method App\\Repository\\PocketMoneyEntryRepository\:\:balances\(\) should return array\<int, int\> but returns array\<int\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/PocketMoneyEntryRepository.php
+
+		-
+			message: '#^Parameter \#1 \$callback of function array_map expects \(callable\(mixed\)\: mixed\)\|null, Closure\(array\|bool\|float\|GMP\|int\|resource\|SimpleXMLElement\|string\|null, int\=\)\: int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Repository/PocketMoneyEntryRepository.php
+
+		-
+			message: '#^Method App\\Repository\\RecurringOperationRepository\:\:familiesWithDueOperations\(\) should return list\<App\\Entity\\Family\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/RecurringOperationRepository.php
+
+		-
+			message: '#^Method App\\Repository\\RecurringOperationRepository\:\:forFamily\(\) should return list\<App\\Entity\\RecurringOperation\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/RecurringOperationRepository.php
+
+		-
+			message: '#^Cannot access offset ''fills'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: src/Repository/RefuelRepository.php
+
+		-
+			message: '#^Cannot access offset ''first'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: src/Repository/RefuelRepository.php
+
+		-
+			message: '#^Cannot access offset ''last'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: src/Repository/RefuelRepository.php
+
+		-
+			message: '#^Cannot access offset ''volume'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: src/Repository/RefuelRepository.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 4
+			path: src/Repository/RefuelRepository.php
+
+		-
+			message: '#^Method App\\Repository\\RefuelRepository\:\:history\(\) should return list\<App\\Entity\\Refuel\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/RefuelRepository.php
+
+		-
+			message: '#^Method App\\Repository\\SavingsProjectRepository\:\:achieved\(\) should return list\<App\\Entity\\SavingsProject\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/SavingsProjectRepository.php
+
+		-
+			message: '#^Method App\\Repository\\SavingsProjectRepository\:\:current\(\) should return list\<App\\Entity\\SavingsProject\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/SavingsProjectRepository.php
+
+		-
+			message: '#^Method App\\Repository\\UserRepository\:\:members\(\) should return list\<App\\Entity\\User\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Repository/UserRepository.php
+
+		-
+			message: '#^Cannot call method getChild\(\) on App\\Entity\\MoneyRequest\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Security/MoneyRequestVoter.php
+
+		-
+			message: '#^Cannot call method getFamily\(\) on App\\Entity\\MoneyRequest\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Security/MoneyRequestVoter.php
+
+		-
+			message: '#^Cannot call method isPending\(\) on App\\Entity\\MoneyRequest\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Security/MoneyRequestVoter.php
+
+		-
+			message: '#^Call to an undefined method App\\Entity\\Operation\|App\\Entity\\Transfer\:\:getAccount\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Security/OperationVoter.php

@@ -19,11 +19,15 @@ enum FamilyRole: string
         };
     }
 
-    /** Parents and teenagers sign in with a password, children with a short PIN. */
+    /**
+     * Parents and teenagers sign in with a password, children with a short PIN.
+     *
+     * @return positive-int
+     */
     public function minPasswordLength(): int
     {
         return match ($this) {
-            self::Parent, self::Teen => 8,
+            self::Parent, self::Teen => 12,
             self::Child => 4,
         };
     }

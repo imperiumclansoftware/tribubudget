@@ -21,13 +21,16 @@ final class SetupTest extends ApiTestCase
     {
         self::assertFalse($this->api('GET', '/api/setup', null)['installed']);
 
-        $response = $this->install();
+        $this->install();
         self::assertResponseStatusCodeSame(201);
-        $me = $this->api('GET', '/api/me', $response['token']);
+        // The first parent is signed in right away: the installation sets the session cookie
+        $token = $this->client->getCookieJar()->get($this->sessionCookie())?->getValue();
+        self::assertNotNull($token);
+        $me = $this->api('GET', '/api/me', $token);
         self::assertSame('parent', $me['role']);
         self::assertSame('Famille Martin', $me['family']['name']);
-        self::assertSame(['Compte courant'], array_column($this->api('GET', '/api/accounts', $response['token']), 'name'));
-        self::assertContains('Argent de poche', array_column($this->api('GET', '/api/categories', $response['token']), 'name'));
+        self::assertSame(['Compte courant'], array_column($this->api('GET', '/api/accounts', $token), 'name'));
+        self::assertContains('Argent de poche', array_column($this->api('GET', '/api/categories', $token), 'name'));
 
         self::assertTrue($this->api('GET', '/api/setup', null)['installed']);
     }
@@ -63,7 +66,7 @@ final class SetupTest extends ApiTestCase
     {
         $response = $this->install(['password' => '1234']);
         self::assertResponseStatusCodeSame(422);
-        self::assertSame('Le mot de passe d’un parent compte au moins 8 caractères.', $response['detail']);
+        self::assertSame('Le mot de passe d’un parent compte au moins 12 caractères.', $response['detail']);
         self::assertFalse($this->api('GET', '/api/setup', null)['installed']);
     }
 
@@ -75,7 +78,7 @@ final class SetupTest extends ApiTestCase
             'familyName' => 'Famille Martin',
             'displayName' => 'Claire',
             'username' => 'claire',
-            'password' => 'motdepasse',
+            'password' => 'Velo-rouge-du-dimanche',
         ]);
     }
 }

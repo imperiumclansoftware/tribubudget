@@ -16,6 +16,6 @@ backend/compose*.yaml
 **/.env.local
 **/.env.*.local
 backend/.env.test
-backend/config/jwt/*.pem
+backend/config/jwt/
 docker/.env
 .github

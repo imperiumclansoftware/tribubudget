@@ -14,6 +14,7 @@ use App\Repository\AccountRepository;
 use App\Repository\OperationRepository;
 use App\Repository\UserRepository;
 use App\Security\PasswordPolicy;
+use App\Security\SecurityAudit;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -37,6 +38,8 @@ final class MemberController extends AbstractController
         private readonly ApiPresenter $presenter,
         private readonly EntityManagerInterface $em,
         private readonly UserPasswordHasherInterface $hasher,
+        private readonly PasswordPolicy $passwordPolicy,
+        private readonly SecurityAudit $audit,
     ) {
     }
 
@@ -50,7 +53,7 @@ final class MemberController extends AbstractController
     /** A teenager starts with a current account and a savings account of their own. */
     public function create(#[CurrentUser] User $me, #[MapRequestPayload] MemberRequest $payload, UserRepository $users, TeenMoney $teenMoney): JsonResponse
     {
-        PasswordPolicy::check($payload->role, $payload->password);
+        $this->passwordPolicy->check($payload->role, $payload->password);
         if ($users->isUsernameTaken($payload->username)) {
             throw new UnprocessableEntityHttpException('Cet identifiant est déjà pris.');
         }
@@ -62,6 +65,7 @@ final class MemberController extends AbstractController
             $teenMoney->openAccounts($member);
         }
         $this->em->flush();
+        $this->audit->memberCreated($me, $member);
 
         return $this->json($this->presenter->user($member), Response::HTTP_CREATED);
     }
@@ -81,9 +85,10 @@ final class MemberController extends AbstractController
     public function resetPassword(User $member, #[CurrentUser] User $me, #[MapRequestPayload] PasswordRequest $payload): Response
     {
         $this->sameFamily($member, $me);
-        PasswordPolicy::check($member->getRole(), $payload->password);
+        $this->passwordPolicy->check($member->getRole(), $payload->password);
         $member->setPassword($this->hasher->hashPassword($member, $payload->password));
         $this->em->flush();
+        $this->audit->passwordChanged($me, $member);
 
         return new Response(status: Response::HTTP_NO_CONTENT);
     }
@@ -108,6 +113,7 @@ final class MemberController extends AbstractController
                 $account->rename(mb_substr($account->getName().' ('.$member->getDisplayName().')', 0, Account::NAME_MAX_LENGTH));
             }
         }
+        $this->audit->memberRemoved($me, $member);
         $this->em->remove($member);
         $this->em->flush();
 

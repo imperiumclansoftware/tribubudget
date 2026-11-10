@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valeurs factices de développement et de test"
+paths = ['''backend/\.env$''', '''backend/\.env\.test$''', '''backend/\.env\.dev$''']
