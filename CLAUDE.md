@@ -120,7 +120,9 @@ keeps Symfony's (`nelmio_security.yaml`). `TRUSTED_PROXIES` defaults to `private
   household budget (balance, month totals, budgets, projects): household queries filter on
   `owner IS NULL` (`AccountRepository`, `OperationRepository`). Keep doing so in new household queries.
 - **Transfers** are two linked operations (`Operation::$transfer`), edited or deleted as a whole, and are
-  excluded from income/expense totals, budgets and history.
+  excluded from income/expense totals and history. A transfer out of a household account may carry an
+  expense category (`Transfer::$category`, savings…): its outgoing operation then counts in that
+  category's budget (`OperationRepository::spentByCategory()`) and in `MonthForecast`.
 - **Schedules**: allowances and recurring operations are caught up (including missed dates) by
   `Money\Schedules::catchUp()` whenever a member opens the app (called from the dashboard, operations,
   `me`, child and teen controllers) and by `app:schedules:run`. It takes a `symfony/lock` lock per family;

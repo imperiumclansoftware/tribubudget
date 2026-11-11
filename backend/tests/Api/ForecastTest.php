@@ -73,6 +73,18 @@ final class ForecastTest extends ApiTestCase
         self::assertSame(3000, $this->api('GET', '/api/dashboard', $this->parent)['forecast']['pocketMoney']);
     }
 
+    public function testSavingsPutAsideByATransferAreBudgeted(): void
+    {
+        $this->recurring('Salaires', 'income', 300000, '2026-10-01');
+        $savings = $this->api('POST', '/api/categories', $this->parent, ['name' => 'Économies', 'kind' => 'expense', 'color' => '#2a9d8f', 'monthlyBudget' => 30000]);
+        $savingsAccount = $this->api('POST', '/api/accounts', $this->parent, ['name' => 'Livret A', 'type' => 'savings', 'initialBalance' => 0])['id'];
+        $this->api('POST', '/api/transfers', $this->parent, ['fromAccountId' => $this->accountId, 'toAccountId' => $savingsAccount, 'amount' => 35000, 'date' => '2026-10-05', 'categoryId' => $savings['id']]);
+
+        // Above its budget: what was put aside counts
+        $forecast = $this->api('GET', '/api/dashboard', $this->parent)['forecast'];
+        self::assertSame([35000, 0, 300000 - 35000], [$forecast['budgets'], $forecast['other'], $forecast['remaining']]);
+    }
+
     public function testOnlyForTheCurrentMonth(): void
     {
         self::assertNull($this->api('GET', '/api/dashboard?month=2026-09', $this->parent)['forecast']);

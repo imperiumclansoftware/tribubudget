@@ -139,6 +139,7 @@ final class ApiPresenter
                 'id' => $operation->getTransfer()->getId(),
                 // The other account: where the money went, or where it came from
                 'counterpartAccountId' => $operation->getTransfer()->counterpartOf($operation)->getId(),
+                'categoryId' => $operation->getTransfer()->getCategory()?->getId(),
             ],
             'reimbursement' => null === $reimbursement ? null : [
                 'id' => $reimbursement->getId(),
@@ -154,6 +155,7 @@ final class ApiPresenter
             'id' => $transfer->getId(),
             'fromAccountId' => $transfer->getFrom()->getId(),
             'toAccountId' => $transfer->getTo()->getId(),
+            'categoryId' => $transfer->getCategory()?->getId(),
             'amount' => $transfer->getAmount(),
             'label' => $transfer->getLabel(),
             'date' => $transfer->getDate()->format('Y-m-d'),

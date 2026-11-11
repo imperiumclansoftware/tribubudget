@@ -29,6 +29,7 @@ base sont créés au premier lancement.
 | Tag | Contenu |
 |---|---|
 | `latest` | Dernière version publiée |
+| `0.7.0` | Un virement depuis un compte du foyer peut compter dans un budget (« Économies »…) |
 | `0.6.1` | SQLite 3.54.1 : trois failles de gravité haute corrigées (CVE-2026-119373, -119374, -119379) |
 | `0.6.0` | Connexion par cookie de session (plus de jeton dans le navigateur), mots de passe de 12 caractères vérifiés contre les fuites connues, journal de sécurité, en-têtes de sécurité ; chaque membre se reconnecte une fois |
 | `0.5.1` | Refus d’accès affichés en clair (« Seuls les parents ont accès aux comptes. ») au lieu de « Forbidden » ; messages techniques du serveur masqués |

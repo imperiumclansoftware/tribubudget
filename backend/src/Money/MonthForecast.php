@@ -19,7 +19,8 @@ use App\Repository\RecurringOperationRepository;
  * to come; a category with a budget counts at least its budget, which covers its recurring
  * operations (a rent in a budgeted "Housing" is not counted twice). The pocket money category also
  * counts the allowances still to pay. Transfers and the teenagers' accounts stay out, as in the
- * other figures of the household budget. The vehicle maintenance still to do by the end of the
+ * other figures of the household budget, except a transfer given a category (savings…), which
+ * counts in that category like an expense. The vehicle maintenance still to do by the end of the
  * month, overdue included, counts its own budget.
  */
 final class MonthForecast
@@ -58,7 +59,8 @@ final class MonthForecast
         }
 
         foreach ($this->operations->between($family, $month->start, $end) as $operation) {
-            if (null !== $operation->getTransfer()) {
+            // A transfer counts only through the category it was given, out of the household account
+            if (null !== $operation->getTransfer() && null === $operation->getCategory()) {
                 continue;
             }
             if (self::isIncome($operation->getCategory(), $operation->getAmount())) {

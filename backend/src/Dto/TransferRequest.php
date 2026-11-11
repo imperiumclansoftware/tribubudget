@@ -20,6 +20,8 @@ final readonly class TransferRequest
         #[Assert\NotBlank(message: 'Indiquez la date.')]
         #[Assert\Date(message: 'Cette date n’est pas valide.')]
         public string $date = '',
+        /** Expense category whose budget the transfer counts in (savings…); null for none */
+        public ?int $categoryId = null,
     ) {
     }
 

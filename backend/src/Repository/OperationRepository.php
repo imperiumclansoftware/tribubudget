@@ -59,15 +59,16 @@ class OperationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Net spending of each category over the period (refunds deducted), as a positive amount.
+     * Net spending of each category over the period (refunds deducted), as a positive amount. The
+     * transfers given a category (savings…) count in it.
      *
      * @return array<int, int> category id => spent
      */
     public function spentByCategory(Family $family, \DateTimeImmutable $from, \DateTimeImmutable $to): array
     {
-        $rows = $this->budgetPeriod($family, $from, $to)
+        $rows = $this->period($family, $from, $to)
             ->select('IDENTITY(o.category) AS category, -SUM(o.amount) AS spent')
-            ->andWhere('o.category IS NOT NULL')
+            ->andWhere('o.category IS NOT NULL AND a.owner IS NULL')
             ->groupBy('o.category')
             ->getQuery()
             ->getArrayResult();

@@ -89,6 +89,9 @@
                   <span class="muted ellipsis">
                     Virement {{ o.amount < 0 ? 'vers' : 'depuis' }}
                     {{ accountName(t.counterpartAccountId) }} · {{ accountName(o.accountId) }}
+                    @if (o.amount < 0 && category(o.categoryId); as c) {
+                      · {{ c.name }}
+                    }
                   </span>
                 </div>
                 <span class="amount transfer-amount">{{ o.amount | euros: true }}</span>
@@ -257,6 +260,21 @@
       <span>Libellé</span>
       <input formControlName="label" placeholder="Virement" />
     </label>
+    @if (transferFromHousehold()) {
+      <label class="field">
+        <span>Compter dans le budget</span>
+        <select formControlName="categoryId">
+          <option [ngValue]="0">Aucun</option>
+          @for (c of expenseCategories(); track c.id) {
+            <option [ngValue]="c.id">{{ c.name }}</option>
+          }
+        </select>
+        <small class="hint"
+          >Par exemple « Économies » : la somme compte dans ce budget et dans le reste prévu, sans
+          devenir une dépense du mois.</small
+        >
+      </label>
+    }
     @if (transferPreview(); as preview) {
       <p class="muted preview">
         {{ preview.fromName }} : {{ preview.fromBefore | euros }} →

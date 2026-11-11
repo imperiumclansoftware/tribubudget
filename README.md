@@ -52,7 +52,10 @@ font leurs demandes aux parents.
     famille à un autre, enregistré comme deux opérations liées (sortie et entrée, le même jour). Ce n’est ni
     un revenu ni une dépense : les virements n’entrent ni dans les totaux du mois, ni dans les budgets, ni
     dans l’historique. Ils se modifient et se suppriment en entier, jamais une seule de leurs opérations.
-    Un virement vers un compte d’épargne alimente ses projets.
+    Un virement vers un compte d’épargne alimente ses projets. Depuis un compte du foyer, un virement peut
+    **compter dans un budget** (*Compter dans le budget* : une catégorie de dépenses, « Économies » par
+    exemple) : l’opération de sortie porte cette catégorie et compte dans son budget, ses dépenses par
+    catégorie et le reste prévu, sans entrer dans les dépenses du mois ni dans l’historique.
   - *Opérations récurrentes* (onglet *Récurrentes*) : loyer, abonnements, salaire… chaque semaine, mois,
     trimestre ou année, avec une date de fin facultative (fin d’un crédit). À chaque échéance, l’opération
     est enregistrée toute seule sur le compte (marquée d’une icône), y compris les échéances manquées

@@ -255,11 +255,20 @@ export class OperationsPage {
     amount: ['', Validators.required],
     date: [todayIso(), Validators.required],
     label: [''],
+    /** 0 for none */
+    categoryId: [0],
   });
   private readonly transferValue = toSignal(this.transferForm.valueChanges, {
     initialValue: this.transferForm.getRawValue(),
   });
   protected readonly transferFrom = computed(() => this.transferValue().fromAccountId);
+  /** Only money taken out of a household account counts in a budget */
+  protected readonly transferFromHousehold = computed(() =>
+    this.accounts().some((a) => a.id === this.transferFrom()),
+  );
+  protected readonly expenseCategories = computed(() =>
+    (this.categories.value() ?? []).filter((c) => c.kind === 'expense'),
+  );
   /** Balance of the debited account before and after, as the parent types */
   protected readonly transferPreview = computed(() => {
     const value = this.transferValue();
@@ -311,6 +320,7 @@ export class OperationsPage {
         amount: centsToInput(Math.abs(operation.amount)),
         date: operation.date,
         label: operation.label,
+        categoryId: operation.transfer.categoryId ?? 0,
       });
       this.transferEditing.set({ id: operation.transfer.id });
     } else {
@@ -326,6 +336,7 @@ export class OperationsPage {
         amount: '',
         date: this.month() === currentMonth() ? todayIso() : `${this.month()}-01`,
         label: '',
+        categoryId: 0,
       });
       this.transferEditing.set({ id: null });
     }
@@ -349,7 +360,11 @@ export class OperationsPage {
       return;
     }
     await this.runTransfer(
-      this.api.saveTransfer(this.transferEditing()?.id ?? null, { ...value, amount }),
+      this.api.saveTransfer(this.transferEditing()?.id ?? null, {
+        ...value,
+        amount,
+        categoryId: this.transferFromHousehold() ? value.categoryId || null : null,
+      }),
     );
   }
 

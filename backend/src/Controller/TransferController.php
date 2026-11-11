@@ -6,14 +6,17 @@ use App\Api\ApiPresenter;
 use App\Api\FamilyLookup;
 use App\Dto\TransferRequest;
 use App\Entity\Account;
+use App\Entity\Category;
 use App\Entity\Transfer;
 use App\Entity\User;
+use App\Enum\CategoryKind;
 use App\Security\OperationVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -40,7 +43,7 @@ final class TransferController extends AbstractController
     public function create(#[CurrentUser] User $me, #[MapRequestPayload] TransferRequest $payload): JsonResponse
     {
         [$from, $to] = $this->accounts($payload, $me);
-        $transfer = new Transfer($from, $to, $payload->amount, $payload->cleanLabel(), new \DateTimeImmutable($payload->date), $me);
+        $transfer = new Transfer($from, $to, $payload->amount, $payload->cleanLabel(), new \DateTimeImmutable($payload->date), $me, $this->category($payload, $from, $me));
         $this->em->persist($transfer);
         $this->em->flush();
 
@@ -52,7 +55,7 @@ final class TransferController extends AbstractController
     {
         $this->editable($transfer, $me);
         [$from, $to] = $this->accounts($payload, $me);
-        $transfer->edit($from, $to, $payload->amount, $payload->cleanLabel(), new \DateTimeImmutable($payload->date));
+        $transfer->edit($from, $to, $payload->amount, $payload->cleanLabel(), new \DateTimeImmutable($payload->date), $this->category($payload, $from, $me));
         $this->em->flush();
 
         return $this->json($this->presenter->transfer($transfer));
@@ -72,6 +75,23 @@ final class TransferController extends AbstractController
     {
         $this->sameFamily($transfer, $me);
         $this->denyAccessUnlessGranted(OperationVoter::EDIT, $transfer, 'Tu ne peux changer que les virements que tu as faits toi-même.');
+    }
+
+    /** A budget is the household's: only money taken out of a household account counts in one. */
+    private function category(TransferRequest $payload, Account $from, User $me): ?Category
+    {
+        $category = $this->lookup->category($payload->categoryId, $me);
+        if (null === $category) {
+            return null;
+        }
+        if (CategoryKind::Expense !== $category->getKind()) {
+            throw new UnprocessableEntityHttpException('Choisissez une catégorie de dépenses.');
+        }
+        if (!$from->isHousehold()) {
+            throw new UnprocessableEntityHttpException('Seul un virement depuis un compte du foyer compte dans un budget.');
+        }
+
+        return $category;
     }
 
     /** @return array{Account, Account} */

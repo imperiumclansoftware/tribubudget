@@ -86,8 +86,9 @@ export interface Operation {
   recurringId: number | null;
   /** Ticked off against the bank statement */
   reconciled: boolean;
-  /** Set on the two operations of a transfer; the counterpart is the other account */
-  transfer: { id: number; counterpartAccountId: number } | null;
+  /** Set on the two operations of a transfer, the counterpart being the other account; its
+   * category, if any, counts in that budget */
+  transfer: { id: number; counterpartAccountId: number; categoryId: number | null } | null;
   /** Latest request of a teenager to be paid back for this expense */
   reimbursement: { id: number; status: RequestStatus } | null;
   /** Whether the viewer may change it (or its transfer) */
@@ -101,6 +102,8 @@ export interface Transfer {
   amount: number;
   label: string;
   date: string;
+  /** Expense category whose budget the money taken out counts in (savings…) */
+  categoryId: number | null;
 }
 
 export interface RecurringOperation {

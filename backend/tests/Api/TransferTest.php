@@ -88,6 +88,45 @@ final class TransferTest extends ApiTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
+    public function testATransferGivenACategoryCountsInItsBudgetButStaysNoExpense(): void
+    {
+        $savingsBudget = $this->api('POST', '/api/categories', $this->parent, ['name' => 'Économies', 'kind' => 'expense', 'color' => '#2a9d8f', 'monthlyBudget' => 30000]);
+        $transfer = $this->api('POST', '/api/transfers', $this->parent, [
+            'fromAccountId' => $this->checkingId, 'toAccountId' => $this->savingsId, 'amount' => 20000,
+            'date' => '2026-10-05', 'categoryId' => $savingsBudget['id'],
+        ]);
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame($savingsBudget['id'], $transfer['categoryId']);
+
+        // The money taken out of the current account is in the category, the money in is not
+        $legs = $this->api('GET', '/api/operations?month=2026-10&categoryId='.$savingsBudget['id'], $this->parent);
+        self::assertSame([[-20000, $this->checkingId]], array_map(static fn ($o) => [$o['amount'], $o['accountId']], $legs));
+        self::assertSame($savingsBudget['id'], $legs[0]['transfer']['categoryId']);
+
+        $dashboard = $this->api('GET', '/api/dashboard?month=2026-10', $this->parent);
+        self::assertSame(['spent' => 20000, 'budget' => 30000], array_intersect_key(array_column($dashboard['categories'], null, 'name')['Économies'], ['spent' => 0, 'budget' => 0]));
+        // Still no expense: the money stays in the family
+        self::assertSame([0, 0, 200000], [$dashboard['income'], $dashboard['expenses'], $dashboard['totalBalance']]);
+
+        // Without its category, it leaves the budget
+        $this->api('PUT', '/api/transfers/'.$transfer['id'], $this->parent, ['fromAccountId' => $this->checkingId, 'toAccountId' => $this->savingsId, 'amount' => 20000, 'date' => '2026-10-05']);
+        self::assertResponseIsSuccessful();
+        self::assertSame(0, array_column($this->api('GET', '/api/dashboard?month=2026-10', $this->parent)['categories'], 'spent', 'name')['Économies']);
+    }
+
+    public function testOnlyAnExpenseCategoryAndOnlyFromTheHousehold(): void
+    {
+        $salary = array_column($this->api('GET', '/api/categories', $this->parent), 'id', 'name')['Salaires'];
+        $this->api('POST', '/api/transfers', $this->parent, ['fromAccountId' => $this->checkingId, 'toAccountId' => $this->savingsId, 'amount' => 100, 'date' => '2026-10-05', 'categoryId' => $salary]);
+        self::assertResponseStatusCodeSame(422);
+
+        $savingsBudget = $this->api('POST', '/api/categories', $this->parent, ['name' => 'Économies', 'kind' => 'expense', 'color' => '#2a9d8f', 'monthlyBudget' => 30000]);
+        [$hugoId, $hugo] = $this->addTeen($this->parent);
+        $accounts = array_column($this->api('GET', "/api/teens/$hugoId", $hugo)['accounts'], 'id', 'type');
+        $this->api('POST', '/api/transfers', $hugo, ['fromAccountId' => $accounts['checking'], 'toAccountId' => $accounts['savings'], 'amount' => 100, 'date' => '2026-10-05', 'categoryId' => $savingsBudget['id']]);
+        self::assertResponseStatusCodeSame(422);
+    }
+
     /** @return array<string, mixed> */
     private function transfer(int $amount, ?string $token = null): ?array
     {

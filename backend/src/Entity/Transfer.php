@@ -11,6 +11,8 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * Money moved from one account of the family to another: recorded as two operations, out of the
  * first account and into the second, which are neither an income nor an expense of the household.
+ * With a category (savings put aside every month…), the operation out of the household account
+ * counts in that category's budget.
  */
 #[ORM\Entity(repositoryClass: TransferRepository::class)]
 class Transfer implements FamilyOwned
@@ -44,10 +46,14 @@ class Transfer implements FamilyOwned
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
         private ?User $createdBy,
+        /** Expense category whose budget the money taken out counts in; null for none */
+        #[ORM\ManyToOne]
+        #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+        private ?Category $category = null,
     ) {
         $this->createdAt = new \DateTimeImmutable();
         $this->operations = new ArrayCollection([
-            new Operation($from, null, -$amount, $label, $date, $createdBy, transfer: $this),
+            new Operation($from, $category, -$amount, $label, $date, $createdBy, transfer: $this),
             new Operation($to, null, $amount, $label, $date, $createdBy, transfer: $this),
         ]);
     }
@@ -103,16 +109,22 @@ class Transfer implements FamilyOwned
         return $operation->getAmount() < 0 ? $this->to : $this->from;
     }
 
-    public function edit(Account $from, Account $to, int $amount, string $label, \DateTimeImmutable $date): void
+    public function getCategory(): ?Category
+    {
+        return $this->category;
+    }
+
+    public function edit(Account $from, Account $to, int $amount, string $label, \DateTimeImmutable $date, ?Category $category = null): void
     {
         $this->from = $from;
         $this->to = $to;
         $this->amount = $amount;
         $this->label = $label;
         $this->date = $date;
+        $this->category = $category;
         foreach ($this->operations as $operation) {
             $out = $operation->getAmount() < 0;
-            $operation->edit($out ? $from : $to, null, $out ? -$amount : $amount, $label, $date);
+            $operation->edit($out ? $from : $to, $out ? $category : null, $out ? -$amount : $amount, $label, $date);
         }
     }
 }

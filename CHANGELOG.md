@@ -1,5 +1,15 @@
 # Journal des versions
 
+## 0.7.0 — 2026-11-11
+
+**Les virements dans les budgets.**
+
+- **Virements dans un budget** : un virement depuis un compte du foyer peut compter dans un budget, par
+  exemple « Économies » (*Compter dans le budget*). La somme compte dans ce budget, les dépenses par
+  catégorie et le reste prévu, sans devenir une dépense du mois.
+
+Mise à jour depuis 0.6.1 : rien à faire, la base est mise à jour au démarrage du conteneur.
+
 ## 0.6.1 — 2026-11-10
 
 **Correctifs de sécurité de l’image.**

@@ -253,6 +253,8 @@ export class TeenAccountsPage {
     initialValue: this.transferForm.getRawValue(),
   });
   protected readonly transferFrom = computed(() => this.transferValue().fromAccountId);
+  /** The budget a transfer counts in, chosen on the operations page: kept when changing it here */
+  private transferCategoryId: number | null = null;
 
   protected openTransfer(operation?: Operation): void {
     if (operation?.transfer) {
@@ -264,6 +266,7 @@ export class TeenAccountsPage {
         date: operation.date,
         label: operation.label,
       });
+      this.transferCategoryId = operation.transfer.categoryId;
       this.transferEditing.set({ id: operation.transfer.id });
     } else {
       // A parent gives from the household to the current account; a teenager saves
@@ -281,6 +284,7 @@ export class TeenAccountsPage {
         date: this.month() === currentMonth() ? todayIso() : `${this.month()}-01`,
         label: '',
       });
+      this.transferCategoryId = null;
       this.transferEditing.set({ id: null });
     }
     this.error.set(null);
@@ -307,7 +311,11 @@ export class TeenAccountsPage {
     }
     await this.run(async () => {
       await firstValueFrom(
-        this.api.saveTransfer(this.transferEditing()?.id ?? null, { ...value, amount }),
+        this.api.saveTransfer(this.transferEditing()?.id ?? null, {
+          ...value,
+          amount,
+          categoryId: this.transferCategoryId,
+        }),
       );
       this.transferEditing.set(null);
     });
