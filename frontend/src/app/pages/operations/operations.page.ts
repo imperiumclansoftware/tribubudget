@@ -28,6 +28,7 @@ import { Modal } from '../../shared/modal';
 import { MonthPicker } from '../../shared/month-picker';
 import { ReconcileCheck } from '../../shared/reconcile-check';
 import { OperationTabs } from './operation-tabs';
+import { operationTotals } from './operation-totals';
 
 /** Income and expenses of a month, grouped by day, with filters and an add/edit dialog. */
 @Component({
@@ -131,13 +132,9 @@ export class OperationsPage {
       operations,
     }));
   });
-  protected readonly totals = computed(() => {
-    const operations = this.list() ?? [];
-    return {
-      income: operations.filter((o) => o.amount > 0).reduce((sum, o) => sum + o.amount, 0),
-      expenses: operations.filter((o) => o.amount < 0).reduce((sum, o) => sum - o.amount, 0),
-    };
-  });
+  protected readonly totals = computed(() =>
+    operationTotals(this.list() ?? [], this.categoryFilter()),
+  );
 
   // Add / edit dialog
 

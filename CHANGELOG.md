@@ -1,5 +1,15 @@
 # Journal des versions
 
+## 0.7.1 — 2026-11-11
+
+**Un résumé des opérations juste.**
+
+- *Opérations* : le résumé « Revenus / Dépenses » ne compte plus les virements, comme le tableau de bord
+  (un virement de 200 € y apparaissait en revenu et en dépense). Filtré sur une catégorie, il compte les
+  virements rattachés à son budget.
+
+Mise à jour depuis 0.7.0 : rien à faire.
+
 ## 0.7.0 — 2026-11-11
 
 **Les virements dans les budgets.**
